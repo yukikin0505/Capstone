@@ -1,301 +1,474 @@
 <title>Swarm Consensus Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: instrument panel. Controls + readouts on top, comms graph left, live charts right; stacks on phones. */
+/* Layout: one-screen instrument. Grouped controls in a left sidebar; main area = readouts, then
+   diagram | fleet + charts, then equation | matrices, then the comms transcript. Stacks on phones. */
 :root {
-  --bg: #f6f7f8;
+  --bg: #f4f6f8;
   --panel: #ffffff;
   --ink: #101418;
-  --ink-2: #4d5660;
-  --ink-3: #7c8692;
-  --rule: #dde1e6;
+  --ink-2: #4b5560;
+  --ink-3: #7a8591;
+  --rule: #dce1e6;
   --grid: #eceff2;
   --accent: #2a78d6;
   --good: #1a7f4b;
   --bad: #c2372f;
   --warn: #9a6400;
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
-  --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
-  --seq0: #cde2fb; --seq1: #86b6ef; --seq2: #3987e5; --seq3: #1c5cab; --seq4: #0d366b;
+  --cam: #2a78d6; --thr: #eb6834; --lid: #1baf7a;   /* drone types: categorical slots 1-3 */
+  --pos: #2a78d6; --neg: #e34948;
+  --task-bg: #e6eefa; --task-edge: #9dbde8; --backup-bg: #f1f2f4; --out-bg: #fbeceb;
   --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121518; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
-    --rule: #2d333a; --grid: #242a30; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
-    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
-    --s6: #008300; --s7: #9085e9; --s8: #e66767;
-    --seq0: #184f95; --seq1: #256abf; --seq2: #3987e5; --seq3: #86b6ef; --seq4: #cde2fb;
+    --bg: #111417; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
+    --rule: #2d333a; --grid: #232930; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
+    --cam: #3987e5; --thr: #d95926; --lid: #199e70; --pos: #3987e5; --neg: #e66767;
+    --task-bg: #1b2838; --task-edge: #2f5a8c; --backup-bg: #20252a; --out-bg: #2e1d1d;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #121518; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
-  --rule: #2d333a; --grid: #242a30; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
-  --s6: #008300; --s7: #9085e9; --s8: #e66767;
-  --seq0: #184f95; --seq1: #256abf; --seq2: #3987e5; --seq3: #86b6ef; --seq4: #cde2fb;
+  --bg: #111417; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
+  --rule: #2d333a; --grid: #232930; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
+  --cam: #3987e5; --thr: #d95926; --lid: #199e70; --pos: #3987e5; --neg: #e66767;
+  --task-bg: #1b2838; --task-edge: #2f5a8c; --backup-bg: #20252a; --out-bg: #2e1d1d;
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 32px; display: grid; gap: 12px; }
 .wrap > * { min-width: 0; }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 32px; display: grid; gap: 14px; }
 
-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-h1 { font-family: var(--f-display); font-weight: 600; font-size: 1.6rem; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
-.law { font-size: 0.85rem; color: var(--ink-2); margin: 0; }
-
-.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
-
-.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 22px; padding: 14px 16px; align-items: end; }
-.ctl { display: grid; gap: 4px; min-width: 0; }
-.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; font-weight: 500; color: var(--ink-2); }
-.ctl output { font-family: var(--f-mono); font-size: 0.85rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ctl .hint { font-size: 0.72rem; color: var(--ink-3); min-height: 1.1em; font-variant-numeric: tabular-nums; }
-input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.brand { display: grid; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 1.55rem; margin: 0; text-wrap: balance; }
+.sub { margin: 0; font-size: 0.85rem; color: var(--ink-2); }
 .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 button { font: 500 0.85rem var(--f-body); padding: 7px 14px; border-radius: 5px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); cursor: pointer; }
 button:hover { border-color: var(--ink-3); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; min-width: 84px; }
+button.small { padding: 4px 10px; font-size: 0.78rem; justify-self: start; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.readouts { display: flex; flex-wrap: wrap; gap: 8px 26px; padding: 10px 16px; align-items: center; }
-.ro { display: grid; gap: 0; }
-.ro span { font-size: 0.74rem; color: var(--ink-3); }
-.ro b { font: 500 1.02rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.shell { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 1000px) { .shell { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; min-width: 0; }
+.main { display: grid; gap: 12px; min-width: 0; }
+
+aside { display: grid; position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; }
+@media (max-width: 1000px) { aside { position: static; max-height: none; } }
+.group { border: 0; margin: 0; padding: 12px 14px; display: grid; gap: 10px; border-bottom: 1px solid var(--rule); min-width: 0; }
+.group:last-child { border-bottom: 0; }
+.group > legend { float: left; width: 100%; padding: 0; font: 600 0.92rem var(--f-display); letter-spacing: 0.02em; color: var(--ink); }
+.ctl { display: grid; gap: 2px; min-width: 0; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; font-weight: 500; color: var(--ink-2); }
+.ctl output { font-family: var(--f-mono); font-size: 0.82rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hint { font-size: 0.72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.8rem; color: var(--ink-2); }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; width: fit-content; max-width: 100%; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { display: block; padding: 4px 9px; font-size: 0.78rem; color: var(--ink-2); cursor: pointer; border-right: 1px solid var(--rule); }
+.seg label:last-of-type { border-right: 0; }
+.seg input:checked + label { background: var(--accent); color: #fff; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+.selchip { display: inline-flex; align-items: center; gap: 6px; font: 500 0.8rem var(--f-body); }
+
+.readouts { display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 10px 14px; align-items: center; }
+.ro { display: grid; }
+.ro span { font-size: 0.72rem; color: var(--ink-3); }
+.ro b { font: 500 0.98rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.ro b.yes { color: var(--good); } .ro b.no { color: var(--bad); }
 .pill { margin-left: auto; font: 500 0.78rem var(--f-body); padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; display: inline-flex; gap: 6px; align-items: center; }
 .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .pill.good { color: var(--good); } .pill.bad { color: var(--bad); } .pill.warn { color: var(--warn); }
 
-.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; }
-@media (max-width: 820px) { .stage { grid-template-columns: minmax(0, 1fr); } .pill { margin-left: 0; } }
-.card { padding: 10px 12px 12px; display: grid; gap: 6px; min-width: 0; position: relative; }
-.card h2 { font: 600 0.95rem var(--f-display); letter-spacing: 0.01em; color: var(--ink); margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 1250px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.card { padding: 10px 12px 12px; display: grid; gap: 6px; min-width: 0; position: relative; align-content: start; }
+.card h2 { font: 600 0.95rem var(--f-display); letter-spacing: 0.01em; color: var(--ink); margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; }
 .card h2 small { font: 400 0.74rem var(--f-body); color: var(--ink-3); }
-.charts { display: grid; gap: 14px; min-width: 0; }
 canvas { width: 100%; display: block; touch-action: manipulation; }
 #graph { aspect-ratio: 1 / 1; cursor: pointer; }
-#series { aspect-ratio: 16 / 8; }
-#dis { aspect-ratio: 16 / 5.2; }
+#series { aspect-ratio: 16 / 7.5; }
+#dis { aspect-ratio: 16 / 5; }
+.note { font-size: 0.76rem; color: var(--ink-3); margin: 0; }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 14px; list-style: none; margin: 0; padding: 0; font-size: 0.76rem; color: var(--ink-2); }
+.keys li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+.sw.ring { border: 2px dashed var(--ink-2); }
+.sw.keep { border: 1.5px solid var(--ink-3); }
+.sw.lost { border: 2px solid var(--bad); }
+.sw.task { border-radius: 3px; background: var(--task-bg); border: 1.5px solid var(--task-edge); }
+.sw.line { border-radius: 0; height: 0; width: 16px; border-top: 2px solid var(--ink-3); }
+.sw.dash { border-radius: 0; height: 0; width: 16px; border-top: 2px dotted var(--bad); }
 
-.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 6px 8px; font: 0.75rem var(--f-mono); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,0.12); white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 6px 8px; font: 0.75rem var(--f-mono); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,0.12); white-space: pre; z-index: 2; font-variant-numeric: tabular-nums; }
 .tip .row { display: flex; gap: 8px; align-items: center; }
 .tip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
-.note { font-size: 0.78rem; color: var(--ink-3); margin: 0; }
 
-.eq { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 14px 22px; padding: 14px 16px; }
-@media (max-width: 820px) { .eq { grid-template-columns: minmax(0, 1fr); } }
-.eq-main { display: grid; gap: 8px; min-width: 0; align-content: start; }
-.formula { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 1.35rem; line-height: 1.6; overflow-x: auto; white-space: nowrap; padding-block: 2px; }
-.formula.sm { font-size: 1.02rem; color: var(--ink-2); }
-.formula var { font-style: italic; }
+.boxes { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+@media (max-width: 640px) { .boxes { grid-template-columns: minmax(0, 1fr); } }
+.box { border-radius: 6px; padding: 7px 9px 9px; display: grid; gap: 6px; align-content: start; border: 1px dashed var(--rule); min-height: 78px; min-width: 0; }
+.box.task { background: var(--task-bg); border: 1.5px solid var(--task-edge); }
+.box.backup { background: var(--backup-bg); }
+.box.out { background: var(--out-bg); }
+.box-title { display: flex; justify-content: space-between; gap: 8px; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.box-title span { font: 400 0.74rem var(--f-mono); color: var(--ink-2); }
+.dots { display: grid; grid-template-columns: repeat(auto-fill, 44px); gap: 8px 4px; padding: 4px 0 0 4px; }
+.slot { display: grid; justify-items: center; gap: 3px; }
+.slot small { font: 0.66rem var(--f-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 0.76rem var(--f-body); padding: 0; cursor: pointer; border: 0; position: relative; color: #fff; }
+.dot.camera { background: var(--cam); } .dot.thermal { background: var(--thr); color: #1a0d05; } .dot.lidar { background: var(--lid); color: #04150e; }
+.dot.backup::before, .dot.commslost::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+.dot.backup::before { border: 2px dashed var(--ink-2); }
+.dot.commslost::before { border: 2px solid var(--bad); }
+.dot.malfunction { opacity: 0.5; }
+.dot.malfunction::after { content: "×"; position: absolute; inset: -6px; display: grid; place-items: center; font: 600 1.7rem/1 var(--f-body); color: var(--bad); }
+.dot.sel { outline: 2px solid var(--ink); outline-offset: 7px; }
+.log { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 2px 16px; font: 0.76rem var(--f-mono); color: var(--ink-2); }
+.log li b { color: var(--ink); font-weight: 500; }
+.empty { font-size: 0.74rem; color: var(--ink-3); }
+
+.formula { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 1.3rem; line-height: 1.7; overflow-x: auto; white-space: nowrap; }
+.formula.sm { font-size: 0.98rem; color: var(--ink-2); line-height: 1.5; }
 .formula sub, .formula sup { font-size: 0.68em; }
 .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 0.15em; }
 .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 0.15em; }
 .big { font-size: 1.5em; vertical-align: -0.12em; }
-.terms { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
-.terms b { font-family: var(--f-mono); font-weight: 500; color: var(--ink); }
-.live { min-width: 0; display: grid; gap: 6px; align-content: start; }
-.live h3 { font: 600 0.95rem var(--f-display); color: var(--ink); margin: 0; }
-.tbl { overflow-x: auto; }
-.live table { border-collapse: collapse; width: 100%; font: 0.78rem var(--f-mono); font-variant-numeric: tabular-nums; }
-.live th { font: 500 0.74rem var(--f-body); color: var(--ink-3); white-space: nowrap; text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--rule); }
-.live td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--grid); }
-.live th:first-child, .live td:first-child { text-align: left; }
-.live tfoot td { border-bottom: 0; color: var(--ink); font-weight: 500; }
-.check { display: flex; gap: 8px; align-items: center; font-size: 0.82rem; color: var(--ink-2); }
-.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rules li { border: 1px solid var(--rule); border-radius: 6px; padding: 6px 9px; font-size: 0.8rem; color: var(--ink-2); display: grid; gap: 1px; }
+.rules li b { color: var(--ink); font-weight: 600; font-size: 0.82rem; }
+.rules code { font: 0.78rem var(--f-mono); color: var(--ink); }
+.tbl { overflow-x: auto; max-width: 100%; }
+table.live { border-collapse: collapse; width: 100%; font: 0.76rem var(--f-mono); font-variant-numeric: tabular-nums; }
+table.live th { font: 500 0.72rem var(--f-body); color: var(--ink-3); text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.live td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+table.live th:first-child, table.live td:first-child { text-align: left; }
+table.live tfoot td { border-bottom: 0; color: var(--ink); font-weight: 500; }
+
+.mats { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-start; }
+.mat { display: grid; gap: 4px; min-width: 0; max-width: 100%; }
+.mat h3 { margin: 0; font: 600 0.84rem var(--f-display); color: var(--ink); }
+.mat h3 small { font: 400 0.72rem var(--f-body); color: var(--ink-3); margin-left: 6px; }
+table.m { border-collapse: separate; border-spacing: 2px; font: 0.66rem var(--f-mono); font-variant-numeric: tabular-nums; }
+table.m th { font: 600 0.64rem var(--f-mono); color: var(--ink-3); padding: 0 2px; text-align: center; white-space: nowrap; }
+table.m th i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: 1px; }
+table.m td { min-width: 32px; height: 21px; text-align: center; border-radius: 3px; color: var(--ink); background: var(--grid); padding: 0 2px; }
+table.m td.z { color: var(--ink-3); background: transparent; }
+table.m td.off { color: var(--bad); background: transparent; text-decoration: line-through; }
+table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+.tx-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: space-between; }
+.transcript { height: 240px; overflow-y: auto; border: 1px solid var(--grid); border-radius: 5px; padding: 6px 8px; font: 0.74rem/1.55 var(--f-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.transcript div { white-space: pre-wrap; }
+.transcript .t { color: var(--ink-3); }
+.transcript .ev { color: var(--bad); font-weight: 500; }
+.transcript .ev.okay { color: var(--good); }
+.transcript .who { color: var(--ink); font-weight: 500; }
+.transcript .lost { color: var(--bad); }
 </style>
 
 <div class="wrap">
   <header>
-    <h1>Swarm Consensus Lab</h1>
-    <p class="law"><span id="drone-count">8</span> drones, no leader: each one only listens to its neighbours</p>
-  </header>
-
-  <section class="panel eq" aria-label="Consensus equation">
-    <div class="eq-main">
-      <div class="formula" aria-label="gamma i times x i dot equals one over the number of neighbours times the sum over neighbours of a i j times the delayed difference">
-        <var>γ</var><sub><var>i</var></sub>&thinsp;<var>ẋ</var><sub><var>i</var></sub>(<var>t</var>) =
-        <span class="frac"><span>1</span><span>|<var>N</var><sub><var>i</var></sub>|</span></span>
-        <span class="big">Σ</span><sub><var>j</var>∈<var>N</var><sub><var>i</var></sub></sub>
-        <var>a</var><sub><var>ij</var></sub> [ <var>x</var><sub><var>j</var></sub>(<var>t</var>−<var>τ</var>) − <var>x</var><sub><var>i</var></sub>(<var>t</var>−<var>τ</var>) ]
-      </div>
-      <div class="formula sm">
-        <var>a</var><sub><var>ij</var></sub> = e<sup>−<var>d</var><sub><var>ij</var></sub>²/<var>σ</var>²</sup> if <var>d</var><sub><var>ij</var></sub> ≤ <var>r</var><sub>c</sub>, else 0
-        &emsp;·&emsp; <var>α</var> = Σ<var>w</var><sub><var>i</var></sub><var>x</var><sub><var>i</var></sub>(0) / Σ<var>w</var><sub><var>i</var></sub>, &nbsp;<var>w</var><sub><var>i</var></sub> = <var>γ</var><sub><var>i</var></sub>|<var>N</var><sub><var>i</var></sub>|
-        &emsp;·&emsp; stable iff <var>τ</var> &lt; π/(2<var>μ</var><sub><var>n</var></sub>)
-      </div>
-      <ul class="terms">
-        <li><b>x<sub>i</sub></b> drone i's value</li>
-        <li><b>N<sub>i</sub></b> drones within r<sub>c</sub></li>
-        <li><b>a<sub>ij</sub></b> link weight, closer = stronger</li>
-        <li><b>γ<sub>i</sub></b> confidence, higher = moves less</li>
-        <li><b>τ</b> message delay</li>
-        <li><b>μ<sub>2</sub>, μ<sub>n</sub></b> slowest / fastest mode of L̂</li>
-      </ul>
+    <div class="brand">
+      <h1>Swarm Consensus Lab</h1>
+      <p class="sub"><span id="drone-count">8</span> drones, no leader. Each one only listens to its neighbours.</p>
     </div>
-    <div class="live">
-      <h3 id="live-title">Drone 0 right now</h3>
-      <div class="tbl"><table>
-        <thead><tr><th>from j</th><th>d<sub>ij</sub> [m]</th><th>a<sub>ij</sub></th><th>x<sub>j</sub>−x<sub>i</sub> (t−τ)</th><th>a<sub>ij</sub>·diff</th></tr></thead>
-        <tbody id="live-body"></tbody>
-        <tfoot id="live-foot"></tfoot>
-      </table></div>
-    </div>
-  </section>
-
-  <section class="panel controls" aria-label="Simulation controls">
-    <div class="ctl">
-      <label for="n">Drones <output id="n-out">8</output></label>
-      <input id="n" type="range" min="2" max="10" step="1" value="8">
-      <div class="hint">new random layout and values</div>
-    </div>
-    <div class="ctl">
-      <label for="rc">Comms radius r<sub>c</sub> <output id="rc-out">40 m</output></label>
-      <input id="rc" type="range" min="15" max="100" step="1" value="40">
-      <div class="hint" id="rc-hint">link iff distance ≤ r<sub>c</sub></div>
-    </div>
-    <div class="ctl">
-      <label for="sigma">Weight falloff σ <output id="sigma-out">40 m</output></label>
-      <input id="sigma" type="range" min="5" max="150" step="1" value="40">
-      <div class="hint">a<sub>ij</sub> = e<sup>−d²/σ²</sup>; small σ = far links weak</div>
-    </div>
-    <div class="ctl">
-      <label for="tau">Delay τ <output id="tau-out">0.00 s</output></label>
-      <input id="tau" type="range" min="0" max="3" step="0.05" value="0">
-      <div class="hint" id="tau-hint">bound τ_max = –</div>
-    </div>
-    <div class="ctl">
-      <label for="gam">Confidence γ of drone <span id="gam-id">0</span> <output id="gam-out">1.0</output></label>
-      <input id="gam" type="range" min="0.5" max="5" step="0.1" value="1">
-      <div class="hint">click a drone in the graph to select it</div>
-    </div>
-    <div class="ctl">
-      <label for="dt">Euler step dt <output id="dt-out">0.010 s</output></label>
-      <input id="dt" type="range" min="0" max="20" step="1" value="4">
-      <div class="hint" id="dt-hint">Euler limit 2/μₙ = –</div>
-    </div>
-    <div class="ctl">
-      <label for="speed">Playback <output id="speed-out">2×</output></label>
-      <input id="speed" type="range" min="0" max="5" step="1" value="2">
-      <div class="hint">simulated seconds per real second</div>
-    </div>
-    <label class="check" for="disks"><input id="disks" type="checkbox" checked> Show every drone's comms radius</label>
     <div class="buttons">
       <button id="play" class="primary" type="button">Pause</button>
       <button id="restart" type="button">Restart</button>
       <button id="shuffle" type="button">New layout</button>
     </div>
-  </section>
+  </header>
 
-  <section class="panel readouts" aria-label="Live readouts">
-    <div class="ro"><span>Time</span><b id="r-t">0.0 s</b></div>
-    <div class="ro"><span>Predicted α</span><b id="r-alpha">–</b></div>
-    <div class="ro"><span>Plain average</span><b id="r-avg">–</b></div>
-    <div class="ro"><span>Spread max−min</span><b id="r-spread">–</b></div>
-    <div class="ro"><span>μ₂ (speed)</span><b id="r-mu2">–</b></div>
-    <div class="ro"><span>Within 1% at</span><b id="r-conv">–</b></div>
-    <span class="pill good" id="status">Converging</span>
-  </section>
+  <div class="shell">
+    <aside class="panel" aria-label="Controls">
+      <fieldset class="group">
+        <legend>Swarm</legend>
+        <div class="ctl"><label for="n"><span>Drones</span> <output id="n-out">8</output></label>
+          <input id="n" type="range" min="2" max="10" step="1" value="8">
+          <div class="hint">new random layout; ⌊n/3⌋ of them are backups</div></div>
+        <div class="ctl"><label for="ntypes"><span>Sensor types</span> <output id="ntypes-out">3</output></label>
+          <input id="ntypes" type="range" min="1" max="3" step="1" value="3">
+          <div class="hint">camera, thermal, lidar</div></div>
+        <div class="ctl"><label for="dmin"><span>Min separation d<sub>min</sub></span> <output id="dmin-out">8 m</output></label>
+          <input id="dmin" type="range" min="0" max="25" step="1" value="8">
+          <div class="hint">no other drone may enter this circle; New layout respects it</div></div>
+      </fieldset>
 
-  <section class="stage">
-    <div class="panel card">
-      <h2>Comms graph <small>click a drone to select it</small></h2>
-      <canvas id="graph" aria-label="Drone positions and communication links, coloured by current value"></canvas>
-      <p class="note">Node colour is the drone's current value x<sub>i</sub>; the colours even out as the swarm agrees. Thicker links are closer drones. Dots on links are messages in flight when τ &gt; 0. Bigger nodes have higher confidence γ. Dashed circles are comms radii; the selected drone's is darker.</p>
-      <div class="tip" id="gtip" hidden></div>
-    </div>
-    <div class="charts">
-      <div class="panel card">
-        <h2>Values x<sub>i</sub>(t) <small>dashed line: predicted α</small></h2>
-        <canvas id="series" aria-label="Each drone's value over time"></canvas>
-        <div class="tip" id="stip" hidden></div>
+      <fieldset class="group">
+        <legend>Comms</legend>
+        <div class="ctl"><label for="rc"><span>Comms radius r<sub>c</sub></span> <output id="rc-out">40 m</output></label>
+          <input id="rc" type="range" min="15" max="100" step="1" value="40">
+          <div class="hint">link if distance ≤ r<sub>c</sub></div></div>
+        <div class="ctl"><label for="sigma"><span>Distance falloff σ</span> <output id="sigma-out">40 m</output></label>
+          <input id="sigma" type="range" min="5" max="150" step="1" value="40">
+          <div class="hint">farther drones count less: e<sup>−d²/σ²</sup></div></div>
+        <div class="ctl"><label for="tau"><span>Delay τ</span> <output id="tau-out">0.00 s</output></label>
+          <input id="tau" type="range" min="0" max="3" step="0.05" value="0">
+          <div class="hint" id="tau-hint">stable if τ &lt; τ_max</div></div>
+        <div class="ctl"><label for="loss"><span>Packet loss</span> <output id="loss-out">0 %</output></label>
+          <input id="loss" type="range" min="0" max="0.9" step="0.05" value="0">
+          <div class="hint">each link drops for 0.5 s at a time with this chance</div></div>
+        <div class="ctl"><label for="T"><span>Info fades with age, T</span> <output id="T-out">off</output></label>
+          <input id="T" type="range" min="0" max="12" step="1" value="12">
+          <div class="hint">older info counts less: × e<sup>−age/T</sup></div></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Selected drone</legend>
+        <div class="selchip"><span class="sw" id="sel-sw"></span><span id="sel-name">Drone 0</span></div>
+        <div class="ctl"><label for="gam"><span>Information weight γ</span> <output id="gam-out">1.0</output></label>
+          <input id="gam" type="range" min="0.5" max="5" step="0.1" value="1">
+          <div class="hint">more info → higher weight: it moves less and pulls α toward itself</div></div>
+        <div class="hint">Click any drone in the diagram or the fleet panel to select it.</div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Failure</legend>
+        <div class="seg" role="radiogroup" aria-label="Failure type">
+          <input type="radio" name="mode" id="m-none" value="none"><label for="m-none">None</label>
+          <input type="radio" name="mode" id="m-mal" value="malfunction" checked><label for="m-mal">Malfunction</label>
+          <input type="radio" name="mode" id="m-com" value="commslost"><label for="m-com">Comms lost</label>
+        </div>
+        <div class="hint" id="mode-hint">drone drops out of the network</div>
+        <div class="ctl"><label for="tfail"><span>Failure at</span> <output id="tfail-out">10 s</output></label>
+          <input id="tfail" type="range" min="1" max="40" step="1" value="10">
+          <div class="hint" id="fail-hint">–</div></div>
+        <label class="check" for="takeover"><input id="takeover" type="checkbox" checked> Nearest backup takes over after 2 s</label>
+        <button id="failsel" class="small" type="button">Make selected drone the one that fails</button>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Simulation</legend>
+        <div class="ctl"><label for="dt"><span>Euler step dt</span> <output id="dt-out">0.010 s</output></label>
+          <input id="dt" type="range" min="0" max="20" step="1" value="4">
+          <div class="hint" id="dt-hint">stable if dt &lt; 2/μₙ</div></div>
+        <div class="ctl"><label for="speed"><span>Playback</span> <output id="speed-out">2×</output></label>
+          <input id="speed" type="range" min="0" max="5" step="1" value="2">
+          <div class="hint">simulated seconds per real second</div></div>
+        <label class="check" for="disks"><input id="disks" type="checkbox" checked> Show comms radius of every drone</label>
+        <label class="check" for="union"><input id="union" type="checkbox"> Highlight links used in the last 5 s</label>
+      </fieldset>
+    </aside>
+
+    <div class="main">
+      <section class="panel readouts" aria-label="Live readouts">
+        <div class="ro"><span>Time</span><b id="r-t">0.0 s</b></div>
+        <div class="ro"><span>Predicted α</span><b id="r-alpha">–</b></div>
+        <div class="ro"><span>Spread max−min</span><b id="r-spread">–</b></div>
+        <div class="ro"><span>μ₂ (speed)</span><b id="r-mu2">–</b></div>
+        <div class="ro"><span>Connected now</span><b id="r-conn">–</b></div>
+        <div class="ro"><span>Jointly connected, last 5 s</span><b id="r-joint">–</b></div>
+        <div class="ro"><span>Closest pair</span><b id="r-close">–</b></div>
+        <div class="ro"><span>Within 1% at</span><b id="r-conv">–</b></div>
+        <span class="pill good" id="status">Converging</span>
+      </section>
+
+      <div class="row2">
+        <section class="panel card" aria-label="Swarm diagram">
+          <h2><span>Swarm diagram</span> <small>click a drone to select it</small></h2>
+          <canvas id="graph" aria-label="Drone positions, communication links, task region and safety circles"></canvas>
+          <ul class="keys">
+            <li><span class="sw" style="background:var(--cam)"></span>camera</li>
+            <li><span class="sw" style="background:var(--thr)"></span>thermal</li>
+            <li><span class="sw" style="background:var(--lid)"></span>lidar</li>
+            <li><span class="sw task"></span>Task 1</li>
+            <li><span class="sw ring"></span>backup</li>
+            <li><span class="sw lost"></span>comms lost</li>
+            <li><span class="sw keep"></span>d<sub>min</sub> circle</li>
+            <li><span class="sw line"></span>link up</li>
+            <li><span class="sw dash"></span>link dropped</li>
+          </ul>
+          <p class="note">Number inside = drone id, number below = its current value x<sub>i</sub>. Thicker links weigh more. Dots on links are messages in flight when τ &gt; 0. Bigger drones have a higher information weight γ. A red × is a drone that malfunctioned.</p>
+          <div class="tip" id="gtip" hidden></div>
+        </section>
+
+        <div class="col">
+          <section class="panel card" aria-label="Fleet status">
+            <h2><span>Fleet status</span> <small>colour = sensor type · box = role</small></h2>
+            <div class="boxes">
+              <div class="box task"><div class="box-title">Task 1 · shared estimate <span id="c-task">0</span></div><div class="dots" id="dots-task"></div></div>
+              <div class="box backup"><div class="box-title">Backups <span id="c-backup">0</span></div><div class="dots" id="dots-backup"></div></div>
+              <div class="box out"><div class="box-title">Out of service <span id="c-out">0</span></div><div class="dots" id="dots-out"></div></div>
+            </div>
+            <ol class="log" id="log"></ol>
+          </section>
+          <section class="panel card" aria-label="Values over time">
+            <h2><span>Values x<sub>i</sub>(t)</span> <small>line colour = sensor type · dashed: predicted α</small></h2>
+            <canvas id="series" aria-label="Each drone's value over time"></canvas>
+            <div class="tip" id="stip" hidden></div>
+          </section>
+          <section class="panel card" aria-label="Disagreement">
+            <h2><span>Disagreement ‖x − α1‖</span> <small>log scale · dashed: slope e<sup>−μ₂t</sup></small></h2>
+            <canvas id="dis" aria-label="Disagreement over time on a log scale"></canvas>
+          </section>
+        </div>
       </div>
-      <div class="panel card">
-        <h2>Disagreement ‖x − α1‖ <small>log scale · dashed slope e<sup>−μ₂t</sup></small></h2>
-        <canvas id="dis" aria-label="Disagreement over time on a log scale"></canvas>
+
+      <div class="row2">
+        <section class="panel card" aria-label="Consensus equation">
+          <h2><span>The rule every drone runs</span> <small>same rule, local info only</small></h2>
+          <div class="formula">
+            <i>γ</i><sub><i>i</i></sub>&thinsp;<i>ẋ</i><sub><i>i</i></sub> =
+            <span class="frac"><span>1</span><span>|<i>N</i><sub><i>i</i></sub>|</span></span>
+            <span class="big">Σ</span><sub><i>j</i>∈<i>N</i><sub><i>i</i></sub></sub>
+            <i>ã</i><sub><i>ij</i></sub> [ <i>x</i><sub><i>j</i></sub>(<i>t</i><sub><i>ij</i></sub>) − <i>x</i><sub><i>i</i></sub>(<i>t</i><sub><i>ij</i></sub>) ]
+          </div>
+          <div class="formula sm">
+            <i>ã</i><sub><i>ij</i></sub> = <i>a</i><sub><i>ij</i></sub>&thinsp;e<sup>−age<sub><i>ij</i></sub>/<i>T</i></sup>,&ensp;
+            <i>a</i><sub><i>ij</i></sub> = e<sup>−<i>d</i><sub><i>ij</i></sub>²/<i>σ</i>²</sup> if <i>d</i><sub><i>ij</i></sub> ≤ <i>r</i><sub>c</sub>,&ensp;
+            <i>t</i><sub><i>ij</i></sub> = send time of <i>j</i>'s last message
+          </div>
+          <ul class="rules">
+            <li><b>Farther ↓ weight</b><span>distance d, falloff σ: <code>e^(−d²/σ²)</code></span></li>
+            <li><b>Older info ↓ weight</b><span>age of the message, T: <code>× e^(−age/T)</code></span></li>
+            <li><b>More info ↑ weight</b><span>γ<sub>i</sub>: the drone moves less, so α moves toward it</span></li>
+            <li><b>Shared value</b><span><code>α = Σ w<sub>i</sub>x<sub>i</sub> / Σ w<sub>i</sub></code>, w<sub>i</sub> = γ<sub>i</sub>|N<sub>i</sub>|</span></li>
+          </ul>
+          <h2 style="margin-top:6px"><span id="live-title">Drone 0 right now</span> <small>one row per neighbour</small></h2>
+          <div class="tbl"><table class="live">
+            <thead><tr><th>from j</th><th>d [m]</th><th>a<sub>ij</sub></th><th>age [s]</th><th>e<sup>−age/T</sup></th><th>ã<sub>ij</sub></th><th>x<sub>j</sub>−x<sub>i</sub></th><th>ã·diff</th></tr></thead>
+            <tbody id="live-body"></tbody>
+            <tfoot id="live-foot"></tfoot>
+          </table></div>
+        </section>
+
+        <section class="panel card" aria-label="Graph matrices">
+          <h2><span>Graph matrices, live</span> <small>outlined row = selected drone</small></h2>
+          <div class="mats">
+            <div class="mat"><h3>A · adjacency <small>ã<sub>ij</sub>, 0 = no link</small></h3><div class="tbl" id="mat-A"></div></div>
+            <div class="mat"><h3>D · degree <small>Σ<sub>j</sub> ã<sub>ij</sub> on the diagonal</small></h3><div class="tbl" id="mat-D"></div></div>
+            <div class="mat"><h3>L = D − A · Laplacian <small>every row sums to 0</small></h3><div class="tbl" id="mat-L"></div></div>
+          </div>
+          <p class="note">Blue = positive, red = negative; a stronger shade is a bigger number. A red struck-through entry is a link that is in range but dropped right now. Each drone's update is row i of L applied to the values it received, divided by γ<sub>i</sub>|N<sub>i</sub>|. The speed μ₂ and the delay bound τ_max are eigenvalues of that normalised matrix.</p>
+        </section>
       </div>
+
+      <section class="panel card" aria-label="Comms transcript">
+        <div class="tx-head">
+          <h2><span>Comms transcript</span> <small>broadcasts every 0.5 s · newest first</small></h2>
+          <label class="check" for="txsel"><input id="txsel" type="checkbox" checked> Only messages involving the selected drone</label>
+        </div>
+        <div class="transcript" id="tx"></div>
+      </section>
     </div>
-  </section>
+  </div>
 </div>
 
 <script>
 (() => {
   "use strict";
-  // ---------------------------------------------------------------- parameters
-  const AREA = 100, T_END = 60, MAX_REDRAWS = 3000;
+  // ================================================================ parameters
+  const AREA = 100, T_END = 60, MAX_REDRAWS = 4000, TICK = 0.5, JOINT_WIN = 5, TAKEOVER_DELAY = 2;
   const DTS = [0.001, 0.002, 0.005, 0.0075, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
-  let dt = 0.01;
+  const TS = [1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60, 90, Infinity];
   const SPEEDS = [0.5, 1, 2, 4, 8, 16];
+  const TYPES = ["camera", "thermal", "lidar"];
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   const $ = (id) => document.getElementById(id);
-  const ui = {
-    n: $("n"), rc: $("rc"), tau: $("tau"), speed: $("speed"), sigma: $("sigma"), gam: $("gam"), dt: $("dt"), disks: $("disks"),
-    play: $("play"), restart: $("restart"), shuffle: $("shuffle"),
-  };
+  const ui = {};
+  ["n", "ntypes", "dmin", "rc", "sigma", "tau", "loss", "T", "gam", "tfail", "takeover", "failsel", "dt", "speed", "disks", "union", "play", "restart", "shuffle", "txsel"].forEach((id) => (ui[id] = $(id)));
 
-  // Seeded RNG (mulberry32) so a layout is reproducible within a session.
-  let seed = 1;
-  function rng() {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  function makeRng(seed) {   // mulberry32: reproducible layouts and packet-loss draws
+    return () => {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   }
+  let layoutSeed = 1, rng = makeRng(1), lossRng = makeRng(2);
 
-  // ---------------------------------------------------------------- state
-  let N = 8, rc = 40, sigma = 40, tau = 0, speedIdx = 2, sel = 0, acc = 0;
-  let pos = [], x0 = [], gamma = [];
-  let A = [], nbrs = [], deg = [];       // a_ij, neighbour lists N_i, |N_i|
+  // ================================================================ state
+  let N = 8, nTypes = 3, dmin = 8, rc = 40, sigma = 40, tau = 0, loss = 0, Tage = Infinity, dt = 0.01, speedIdx = 2;
+  let sel = 0, acc = 0;
+  let pos = [], x0 = [], gamma = [], type = [], role0 = [], role = [], health = [];
+  // One record per undirected link. Both directions share up/down state and the send time of the
+  // last exchanged message, so the weights stay symmetric even with packet loss.
+  let links = [], linkAt = [];
+  let nbrs = [], deg = [];                 // N_i (drones in range), |N_i|
   let spec = null, alpha = NaN, connected = true;
-  let hist = [], times = [], dis = [];   // x(t_k) history (also the delay buffer)
-  let k = 0, running = true, finished = false, tConv = null, diverged = false;
-  let pulses = [], nextEmit = 0;
+  let hist = [], times = [], dis = [];
+  let k = 0, running = true, finished = false, tConv = null, diverged = false, nextTick = 0;
+  let failMode = "malfunction", tFail = 10, failDrone = 0, failed = false, promoted = false;
+  let events = [], ref = { t: 0, e: NaN }, pulses = [], tx = [];
   let hoverNode = -1, hoverSeries = -1;
+  let matDirty = true, txDirty = true, lastMat = 0;
 
-  // ---------------------------------------------------------------- graph (comms layer)
-  function buildEdges() {
-    A = Array.from({ length: N }, () => new Array(N).fill(0));
+  const ok = (i) => !health.length || health[i] === "ok";
+  const liveIdx = () => [...Array(N).keys()].filter(ok);
+  const dist = (i, j) => Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]);
+  const ageFactor = (age) => (isFinite(Tage) ? Math.exp(-age / Tage) : 1);   // e^(-age/T)
+  const fmt = (v, d = 3) => (isFinite(v) ? v.toFixed(d) : "–");
+
+  // ================================================================ comms layer
+  function buildLinks() {
+    const old = new Map(links.map((l) => [`${l.i}-${l.j}`, l]));
+    links = []; linkAt = Array.from({ length: N }, () => new Array(N).fill(-1));
     nbrs = Array.from({ length: N }, () => []);
-    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
-      if (i === j) continue;
-      const d = Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]);
-      if (d <= rc) {                         // link iff d_ij <= r_c
-        A[i][j] = Math.exp(-(d * d) / (sigma * sigma));   // a_ij = exp(-d^2/sigma^2)
-        nbrs[i].push(j);
-      }
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+      if (!ok(i) || !ok(j)) continue;                    // failed drones have no links
+      const d = dist(i, j);
+      if (d > rc) continue;                              // link iff d_ij <= r_c
+      const p = old.get(`${i}-${j}`);
+      linkAt[i][j] = linkAt[j][i] = links.length;
+      links.push({ i, j, a: Math.exp(-(d * d) / (sigma * sigma)), up: p ? p.up : true, tSent: p ? p.tSent : 0, lastUp: p ? p.lastUp : 0 });
+      nbrs[i].push(j); nbrs[j].push(i);
     }
     deg = nbrs.map((nb) => nb.length);
-    connected = isConnected();
+    connected = isConnectedBy(() => true);
   }
-  function isConnected() {
-    const seen = new Set([0]), stack = [0];
-    while (stack.length) { const i = stack.pop(); for (const j of nbrs[i]) if (!seen.has(j)) { seen.add(j); stack.push(j); } }
-    return seen.size === N;
+  function isConnectedBy(useLink) {   // over healthy drones, using only links where useLink(link) is true
+    const live = liveIdx(); if (live.length <= 1) return true;
+    const seen = new Set([live[0]]), stack = [live[0]];
+    while (stack.length) {
+      const i = stack.pop();
+      for (const j of nbrs[i]) if (useLink(links[linkAt[i][j]]) && !seen.has(j)) { seen.add(j); stack.push(j); }
+    }
+    return seen.size === live.length;
   }
+  const effWeight = (l, t) => l.a * ageFactor(t - l.tSent);   // ã_ij = a_ij e^(-age/T)
+
   function newLayout() {
-    seed = (Math.random() * 2 ** 31) | 0;
+    layoutSeed = (Math.random() * 2 ** 31) | 0; rng = makeRng(layoutSeed);
+    health = []; links = [];
     let tries = 0;
-    do {
+    do {   // redraw until connected and no pair closer than d_min
       pos = Array.from({ length: N }, () => [rng() * AREA, rng() * AREA]);
-      buildEdges();
-    } while (!connected && ++tries < MAX_REDRAWS);
+      buildLinks();
+    } while ((!connected || closestPair().d < dmin) && ++tries < MAX_REDRAWS);
     x0 = Array.from({ length: N }, () => rng() * 10);
     gamma = new Array(N).fill(1);
+    const perm = [...Array(N).keys()].sort(() => rng() - 0.5);
+    type = new Array(N); perm.forEach((i, q) => (type[i] = TYPES[q % nTypes]));
+    const order = [...Array(N).keys()].sort(() => rng() - 0.5);   // floor(N/3) backups, rest on Task 1
+    role0 = new Array(N).fill("active"); order.slice(0, Math.floor(N / 3)).forEach((i) => (role0[i] = "backup"));
+    const actives = [...Array(N).keys()].filter((i) => role0[i] === "active");
+    failDrone = actives[Math.floor(rng() * actives.length)];
     sel = 0;
   }
+  function closestPair() {
+    let best = { d: Infinity, i: -1, j: -1 };
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+      if (health.length && (health[i] === "malfunction" || health[j] === "malfunction")) continue;
+      const d = dist(i, j); if (d < best.d) best = { d, i, j };
+    }
+    return best;
+  }
 
-  // ---------------------------------------------------------------- theory
-  // Eigenvalues of Lhat via the symmetric similar matrix S = W^-1/2 L W^-1/2 (Jacobi rotations).
-  function jacobiEigs(M) {
+  // ================================================================ theory
+  function jacobiEigs(M) {   // eigenvalues of a symmetric matrix (Jacobi rotations)
     const n = M.length, a = M.map((r) => r.slice());
     for (let sweep = 0; sweep < 100; sweep++) {
       let off = 0;
@@ -306,103 +479,148 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
         const th = (a[q][q] - a[p][p]) / (2 * a[p][q]);
         const t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1));
         const c = 1 / Math.sqrt(t * t + 1), s = t * c;
-        for (let r = 0; r < n; r++) {
-          const arp = a[r][p], arq = a[r][q];
-          a[r][p] = c * arp - s * arq; a[r][q] = s * arp + c * arq;
-        }
-        for (let r = 0; r < n; r++) {
-          const apr = a[p][r], aqr = a[q][r];
-          a[p][r] = c * apr - s * aqr; a[q][r] = s * apr + c * aqr;
-        }
+        for (let r = 0; r < n; r++) { const u = a[r][p], v = a[r][q]; a[r][p] = c * u - s * v; a[r][q] = s * u + c * v; }
+        for (let r = 0; r < n; r++) { const u = a[p][r], v = a[q][r]; a[p][r] = c * u - s * v; a[q][r] = s * u + c * v; }
       }
     }
     return a.map((r, i) => r[i]).sort((u, v) => u - v);
   }
-  function computeTheory() {
-    // w_i = gamma_i |N_i| ; alpha = sum w_i x_i(0) / sum w_i (only meaningful when connected)
-    const w = gamma.map((g, i) => g * deg[i]);
+  // Nominal theory (all links up, message age = tau): Lhat = Gamma^-1 DeltaN^-1 L with weights a_ij e^(-tau/T).
+  // alpha = sum w_i x_i / sum w_i, w_i = gamma_i |N_i|. w^T x stays conserved with packet loss and stale
+  // messages too, because the two directions of a link always use the same weight and timestamp.
+  function computeTheory(xRef) {
+    const live = liveIdx();
+    const w = live.map((i) => gamma[i] * deg[i]);
     const sw = w.reduce((s, v) => s + v, 0);
-    alpha = connected && sw > 0 ? w.reduce((s, v, i) => s + v * x0[i], 0) / sw : NaN;
-    if (!connected || deg.some((d) => d === 0)) { spec = null; return; }
-    const L = A.map((row, i) => row.map((a, j) => (i === j ? row.reduce((s, v) => s + v, 0) : -a)));
+    alpha = connected && sw > 0 ? w.reduce((s, v, q) => s + v * xRef[live[q]], 0) / sw : NaN;
+    if (!connected || live.length < 2 || live.some((i) => deg[i] === 0)) { spec = null; return; }
+    const f = ageFactor(tau);
+    const L = live.map((i) => live.map((j) => {
+      if (i === j) return nbrs[i].reduce((s, q) => s + links[linkAt[i][q]].a * f, 0);
+      const li = linkAt[i][j]; return li < 0 ? 0 : -links[li].a * f;
+    }));
     const wis = w.map((v) => 1 / Math.sqrt(v));
-    const S = L.map((row, i) => row.map((v, j) => wis[i] * v * wis[j]));
-    const mu = jacobiEigs(S);
-    spec = { mu, mu2: mu[1], muN: mu[N - 1], tauMax: Math.PI / (2 * mu[N - 1]) };
+    const S = L.map((row, p) => row.map((v, q) => wis[p] * v * wis[q]));   // S = W^-1/2 L W^-1/2
+    const mu = jacobiEigs(S), n = live.length;
+    spec = { mu, mu2: mu[1], muN: mu[n - 1], tauMax: Math.PI / (2 * mu[n - 1]) };
   }
 
-  // ---------------------------------------------------------------- simulation
+  // ================================================================ simulation
   function restart() {
+    role = role0.slice(); health = new Array(N).fill("ok"); failed = false; promoted = false; events = []; tx = [];
+    links = []; buildLinks();
+    lossRng = makeRng(layoutSeed ^ 0x5bd1e995);
+    computeTheory(x0);
     hist = [x0.slice()]; times = [0]; dis = [disagreement(x0)];
-    k = 0; finished = false; tConv = null; diverged = false; acc = 0;
-    pulses = []; nextEmit = 0;
-    computeTheory();
+    k = 0; finished = false; tConv = null; diverged = false; acc = 0; nextTick = 0;
+    pulses = []; ref = { t: 0, e: dis[0] };
     running = true; ui.play.textContent = "Pause";
+    commsTick(0);
+    buildFleet(); renderTranscript(); renderMatrices();
   }
-  function disagreement(x) {
+  function disagreement(x) {   // ||x - alpha 1|| over healthy drones
     if (!isFinite(alpha)) return NaN;
-    return Math.sqrt(x.reduce((s, v) => s + (v - alpha) ** 2, 0));
+    return Math.sqrt(liveIdx().reduce((s, i) => s + (x[i] - alpha) ** 2, 0));
   }
-  // One forward-Euler step. Each drone i uses ONLY its own value, its own value tau ago, and the
-  // values its neighbours broadcast tau ago:
-  //   x_i <- x_i + dt/gamma_i * (1/|N_i|) * sum_j a_ij (x_j[k-d] - x_i[k-d])
+  const idxOf = (t) => Math.max(0, Math.min(k, Math.round(t / dt)));
+
+  // One forward-Euler step. Drone i uses only its own memory and the last message from each neighbour:
+  //   x_i <- x_i + dt / (gamma_i |N_i|) * sum_j ã_ij ( x_j(t_ij) - x_i(t_ij) )
   function step() {
-    const d = Math.round(tau / dt);
-    const now = hist[k], sent = hist[Math.max(k - d, 0)];
-    const next = new Array(N);
+    const t = k * dt, now = hist[k], next = new Array(N);
+    for (const l of links) if (l.up) l.tSent = Math.max(0, t - tau);   // the message sent tau ago arrives
     for (let i = 0; i < N; i++) {
-      if (deg[i] === 0) { next[i] = now[i]; continue; }   // isolated drone holds its value
+      if (health[i] === "malfunction") { next[i] = NaN; continue; }   // drone is down
+      if (deg[i] === 0) { next[i] = now[i]; continue; }                // nothing to hear: hold value
       let u = 0;
-      for (const j of nbrs[i]) u += A[i][j] * (sent[j] - sent[i]);
+      for (const j of nbrs[i]) {
+        const l = links[linkAt[i][j]], h = hist[idxOf(l.tSent)];
+        u += effWeight(l, t) * (h[j] - h[i]);
+      }
       next[i] = now[i] + (dt * (u / deg[i])) / gamma[i];
     }
-    hist.push(next); k++; times.push(k * dt); dis.push(disagreement(next));
-    if (next.some((v) => !isFinite(v) || Math.abs(v) > 1e4)) { diverged = true; finished = true; }
-    if (isFinite(alpha) && tConv === null && next.every((v) => Math.abs(v - alpha) < 0.01 * Math.abs(alpha))) tConv = k * dt;
-    if (tConv !== null && next.some((v) => Math.abs(v - alpha) >= 0.01 * Math.abs(alpha))) tConv = null;
-    if (k * dt >= T_END - 1e-9) finished = true;
+    hist.push(next); k++; times.push(k * dt);
+    const tn = k * dt;
+    fleetEvents(tn, next);
+    while (nextTick <= tn + 1e-9) commsTick(nextTick);
+    dis.push(disagreement(next));
+    const lv = liveIdx().map((i) => next[i]);
+    if (lv.some((v) => !isFinite(v) || Math.abs(v) > 1e4)) { diverged = true; finished = true; }
+    const inside = isFinite(alpha) && lv.every((v) => Math.abs(v - alpha) < 0.01 * Math.abs(alpha));
+    if (inside && tConv === null) tConv = tn;
+    if (!inside) tConv = null;
+    if (tn >= T_END - 1e-9) finished = true;
   }
-  function emitPulses(t) {
-    // Visual only: every 0.5 s each drone broadcasts; a dot travels each link for tau seconds.
-    if (tau <= 0) return;
-    while (nextEmit <= t) {
-      for (let i = 0; i < N; i++) for (const j of nbrs[i]) pulses.push({ from: j, to: i, t0: nextEmit, val: valueAt(j, nextEmit) });
-      nextEmit += 0.5;
-    }
-    pulses = pulses.filter((p) => t - p.t0 < tau);
-  }
-  function valueAt(i, t) { const kk = Math.min(Math.round(t / dt), k); return hist[kk][i]; }
 
-  // ---------------------------------------------------------------- colours / theme
+  // Every TICK seconds: each link is up or dropped for the next TICK (packet loss), every drone
+  // broadcasts, and the transcript records who heard whom.
+  function commsTick(t) {
+    for (const l of links) { l.up = lossRng() >= loss; if (l.up) l.lastUp = t; }
+    const x = hist[idxOf(t)], stamp = `<span class="t">${t.toFixed(1).padStart(5)} s</span>  `;
+    if (tau > 0) for (const l of links) if (l.up) {
+      pulses.push({ from: l.i, to: l.j, t0: t }); pulses.push({ from: l.j, to: l.i, t0: t });
+    }
+    for (const i of liveIdx()) {
+      const heard = nbrs[i].filter((j) => links[linkAt[i][j]].up), lost = nbrs[i].filter((j) => !links[linkAt[i][j]].up);
+      let line = `${stamp}<span class="who">${i} ${type[i]}</span> broadcasts x = ${x[i].toFixed(3)}`;
+      line += heard.length ? ` → heard by ${heard.join(", ")}` : " → heard by no one";
+      if (lost.length) line += ` <span class="lost">· dropped to ${lost.join(", ")}</span>`;
+      tx.push({ about: [i, ...nbrs[i]], html: line });
+      if (i === sel && nbrs[i].length) {
+        const uses = nbrs[i].map((j) => { const l = links[linkAt[i][j]], age = l.up ? Math.min(tau, t) : t - l.tSent; return `${j} (age ${age.toFixed(1)} s, ã ${(l.a * ageFactor(age)).toFixed(2)})`; });
+        tx.push({ about: [i], html: `${stamp}<span class="who">${i}</span> uses ${uses.join(", ")}` });
+      }
+    }
+    if (tx.length > 800) tx = tx.slice(-500);
+    nextTick = t + TICK; txDirty = true;
+  }
+
+  // Failure and takeover. The takeover picks the backup closest to the failed drone (simplified:
+  // in the real system the neighbours would notice the silence and agree on this).
+  function fleetEvents(t, x) {
+    if (failMode !== "none" && !failed && t >= tFail - 1e-9) {
+      failed = true; health[failDrone] = failMode;
+      if (failMode === "malfunction") x[failDrone] = NaN;
+      buildLinks(); computeTheory(x); tConv = null;
+      addEvent(t, "fail", `drone ${failDrone} (${type[failDrone]}) ${failMode === "malfunction" ? "malfunctions" : "loses comms"}`, `${failDrone} out`);
+      if (!connected) addEvent(t, "split", "network split into groups", "split");
+      ref = { t, e: NaN };
+      placeFleet();
+    }
+    if (failed && !promoted && ui.takeover.checked && t >= tFail + TAKEOVER_DELAY - 1e-9) {
+      promoted = true;
+      const cands = [...Array(N).keys()].filter((i) => role[i] === "backup" && ok(i));
+      if (role[failDrone] === "active" && cands.length) {
+        const b = cands.reduce((best, i) => (dist(i, failDrone) < dist(best, failDrone) ? i : best));
+        role[b] = "active";
+        addEvent(t, "takeover", `backup ${b} (${type[b]}) joins Task 1`, `${b} in`);
+      } else if (role[failDrone] === "active") addEvent(t, "none", "no backup available", "no backup");
+      placeFleet();
+    }
+    if (failed && isNaN(ref.e)) ref = { t, e: disagreement(x) };
+  }
+  function addEvent(t, kind, text, short) {
+    events.push({ t, kind, text, short });
+    tx.push({ about: "all", html: `<span class="t">${t.toFixed(1).padStart(5)} s</span>  <span class="ev${kind === "takeover" ? " okay" : ""}">EVENT: ${text}</span>` });
+    txDirty = true;
+  }
+
+  // ================================================================ theme
   let C = {};
   function readTheme() {
-    const cs = getComputedStyle(document.documentElement);
-    const g = (n) => cs.getPropertyValue(n).trim();
+    const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
     C = {
       panel: g("--panel"), ink: g("--ink"), ink2: g("--ink-2"), ink3: g("--ink-3"), rule: g("--rule"), grid: g("--grid"),
-      series: ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6", "--s7", "--s8"].map(g),
-      seq: ["--seq0", "--seq1", "--seq2", "--seq3", "--seq4"].map(g),
-      mono: g("--f-mono"), body: g("--f-body"),
+      good: g("--good"), bad: g("--bad"), taskBg: g("--task-bg"), taskEdge: g("--task-edge"),
+      type: { camera: g("--cam"), thermal: g("--thr"), lidar: g("--lid") },
+      pos: g("--pos"), neg: g("--neg"), mono: g("--f-mono"), body: g("--f-body"),
     };
+    matDirty = true;
   }
-  // Drones 0-7 get the 8 categorical hues; drones 8 and 9 reuse hues 1 and 2 with a dashed line.
-  const seriesColor = (i) => C.series[i % 8];
-  const seriesDash = (i) => (i >= 8 ? [6, 4] : []);
-  function hexToRgb(h) { const v = parseInt(h.replace("#", ""), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
-  function seqColor(v) {               // value 0..10 -> sequential blue ramp
-    const tt = Math.max(0, Math.min(1, v / 10)) * (C.seq.length - 1);
-    const i = Math.min(Math.floor(tt), C.seq.length - 2), f = tt - i;
-    const a = hexToRgb(C.seq[i]), b = hexToRgb(C.seq[i + 1]);
-    const m = a.map((c, q) => Math.round(c + (b[q] - c) * f));
-    return `rgb(${m[0]},${m[1]},${m[2]})`;
-  }
-  function textOn(v) { // pick ink for a node label by luminance of its fill
-    const tt = Math.max(0, Math.min(1, v / 10));
-    const dark = document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-    return (dark ? tt < 0.55 : tt > 0.45) ? "#ffffff" : "#0b1520";
-  }
+  const typeText = { camera: "#ffffff", thermal: "#1a0d05", lidar: "#04150e" };
+  const typeVar = { camera: "--cam", thermal: "--thr", lidar: "--lid" };
 
-  // ---------------------------------------------------------------- canvas helpers
+  // ================================================================ canvas helpers
   function fit(cv) {
     const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
@@ -412,12 +630,13 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
   }
   function niceTicks(lo, hi, n) {
     const span = hi - lo || 1, raw = span / n, mag = 10 ** Math.floor(Math.log10(raw));
-    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
-    const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+    const st = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
+    const out = []; for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) out.push(+v.toFixed(10));
     return out;
   }
+  function halo(ctx, txt, x, y, col) { ctx.lineJoin = "round"; ctx.lineWidth = 3.5; ctx.strokeStyle = C.panel; ctx.strokeText(txt, x, y); ctx.fillStyle = col; ctx.fillText(txt, x, y); }
 
-  // ---------------------------------------------------------------- draw: graph
+  // ================================================================ draw: swarm diagram
   const gcv = $("graph"), scv = $("series"), dcv = $("dis");
   let gGeom = null;
   function drawGraph() {
@@ -425,8 +644,11 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
     ctx.clearRect(0, 0, w, h);
     const pad = 22, s = (Math.min(w, h) - 2 * pad) / AREA;
     const X = (p) => pad + p[0] * s, Y = (p) => h - pad - p[1] * s;
-    gGeom = { X, Y, s };
-    // area frame + light grid every 20 m
+    gGeom = { X, Y };
+    const t = k * dt, x = hist[k];
+    const R0 = Math.max(10, Math.min(15, 1.4 * s * 10));
+    const Rof = (i) => R0 * Math.pow(gamma[i], 0.4);   // size grows with information weight
+
     ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
     for (let g = 0; g <= AREA; g += 20) {
       ctx.beginPath(); ctx.moveTo(pad + g * s, pad); ctx.lineTo(pad + g * s, h - pad); ctx.stroke();
@@ -435,218 +657,349 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
     ctx.fillStyle = C.ink3; ctx.font = `10px ${C.mono}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText("100 m × 100 m", pad + 2, h - pad + 6);
 
-    const x = hist[k];
-    // comms disks of radius r_c: every drone (faint) and the selected / hovered one (dark)
+    // Task 1 region: discs around active drones joined along their links (never encloses a backup)
+    const team = [...Array(N).keys()].filter((i) => ok(i) && role[i] === "active");
+    if (team.length) {
+      const band = (wd, col, mode) => {
+        ctx.save(); ctx.globalCompositeOperation = mode; ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineCap = "round"; ctx.lineWidth = wd;
+        for (const i of team) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), wd / 2, 0, 2 * Math.PI); ctx.fill(); }
+        for (const i of team) for (const j of nbrs[i]) if (j > i && role[j] === "active") { ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.stroke(); }
+        // fill triangles of three mutually linked active drones so the region has no holes
+        for (const i of team) for (const j of team) for (const q of team) if (i < j && j < q && linkAt[i][j] >= 0 && linkAt[j][q] >= 0 && linkAt[i][q] >= 0) {
+          ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.lineTo(X(pos[q]), Y(pos[q])); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+      };
+      band(2 * (R0 + 12), C.taskBg, "source-over");
+      band(2 * (R0 + 12) + 3, C.taskEdge, "destination-over");
+      const top = team.reduce((a, i) => (Y(pos[i]) < Y(pos[a]) ? i : a));
+      ctx.font = `600 11.5px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      halo(ctx, `Task 1 · ${team.length} drone${team.length === 1 ? "" : "s"}`, X(pos[top]), Math.max(12, Y(pos[top]) - R0 - 14), C.ink);
+    }
+
+    // comms radius circles
     const focus = hoverNode >= 0 ? hoverNode : sel;
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip(); ctx.setLineDash([4, 4]);
+    ctx.save(); ctx.setLineDash([4, 4]);
     if (ui.disks.checked) {
-      ctx.strokeStyle = C.ink3; ctx.globalAlpha = 0.28; ctx.lineWidth = 1;
-      for (let i = 0; i < N; i++) if (i !== focus) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), rc * s, 0, 2 * Math.PI); ctx.stroke(); }
+      ctx.strokeStyle = C.ink3; ctx.globalAlpha = 0.25; ctx.lineWidth = 1;
+      for (let i = 0; i < N; i++) if (i !== focus && ok(i)) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), rc * s, 0, 2 * Math.PI); ctx.stroke(); }
     }
     ctx.globalAlpha = 1; ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.3;
     ctx.beginPath(); ctx.arc(X(pos[focus]), Y(pos[focus]), rc * s, 0, 2 * Math.PI); ctx.stroke();
-    ctx.setLineDash([]); ctx.fillStyle = C.ink2; ctx.font = `10px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-    ctx.fillText(`r_c = ${rc} m`, X(pos[focus]), Math.max(12, Y(pos[focus]) - rc * s - 3));
+    ctx.setLineDash([]); ctx.font = `10px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    halo(ctx, `r_c = ${rc} m`, X(pos[focus]), Math.max(12, Y(pos[focus]) - rc * s - 3), C.ink2);
     ctx.restore();
 
-    // links, width proportional to a_ij
-    for (let i = 0; i < N; i++) for (const j of nbrs[i]) {
-      if (j < i) continue;
-      const hl = hoverNode === i || hoverNode === j;
-      ctx.strokeStyle = hl ? C.ink2 : C.ink3; ctx.globalAlpha = hl ? 0.9 : 0.45;
-      ctx.lineWidth = 0.6 + 4.2 * A[i][j]; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.stroke();
+    // links used in the last JOINT_WIN seconds (the union graph), then the links right now
+    if (ui.union.checked) {
+      ctx.save(); ctx.strokeStyle = C.good; ctx.globalAlpha = 0.3; ctx.lineCap = "round"; ctx.lineWidth = 9;
+      for (const l of links) if (l.lastUp >= t - JOINT_WIN) { ctx.beginPath(); ctx.moveTo(X(pos[l.i]), Y(pos[l.i])); ctx.lineTo(X(pos[l.j]), Y(pos[l.j])); ctx.stroke(); }
+      ctx.restore();
     }
-    ctx.globalAlpha = 1;
+    for (const l of links) {
+      const hl = focus === l.i || focus === l.j;
+      ctx.save(); ctx.lineCap = "round";
+      if (l.up) { ctx.strokeStyle = hl ? C.ink2 : C.ink3; ctx.globalAlpha = hl ? 0.95 : 0.55; ctx.lineWidth = 0.6 + 4.2 * effWeight(l, t); }
+      else { ctx.strokeStyle = C.bad; ctx.globalAlpha = 0.6; ctx.lineWidth = 1.4; ctx.setLineDash([2, 4]); }
+      ctx.beginPath(); ctx.moveTo(X(pos[l.i]), Y(pos[l.i])); ctx.lineTo(X(pos[l.j]), Y(pos[l.j])); ctx.stroke();
+      ctx.restore();
+    }
 
     // messages in flight
-    const t = k * dt;
+    pulses = pulses.filter((p) => t - p.t0 < tau && ok(p.from) && ok(p.to));
     for (const p of pulses) {
       const f = (t - p.t0) / tau; if (f < 0 || f > 1) continue;
       const a = pos[p.from], b = pos[p.to];
-      const px = X(a) + (X(b) - X(a)) * f, py = Y(a) + (Y(b) - Y(a)) * f;
-      ctx.beginPath(); ctx.arc(px, py, 3.2, 0, 2 * Math.PI);
-      ctx.fillStyle = seqColor(p.val); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.panel; ctx.stroke();
+      ctx.beginPath(); ctx.arc(X(a) + (X(b) - X(a)) * f, Y(a) + (Y(b) - Y(a)) * f, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = C.type[type[p.from]]; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.panel; ctx.stroke();
     }
 
-    // nodes: fill = current value
-    const R0 = Math.max(10, Math.min(15, 1.4 * s * 10));
-    for (let i = 0; i < N; i++) {
-      const R = R0 * Math.sqrt(gamma[i]) ** 0.8;      // node size grows with confidence gamma_i
-      const cx = X(pos[i]), cy = Y(pos[i]), v = isFinite(x[i]) ? x[i] : 0;
-      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
-      ctx.fillStyle = seqColor(v); ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
-      if (i === sel) { ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 1.6; ctx.strokeStyle = C.ink; ctx.stroke(); }
-      if (hoverNode === i || hoverSeries === i) { ctx.beginPath(); ctx.arc(cx, cy, R + 7, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = seriesColor(i); ctx.stroke(); }
-      ctx.fillStyle = textOn(v); ctx.font = `600 12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(String(i), cx, cy + 0.5);
+    // d_min keep-out circles (red when another drone is inside)
+    if (dmin > 0) for (let i = 0; i < N; i++) {
+      if (health[i] === "malfunction") continue;
+      const tooClose = [...Array(N).keys()].some((j) => j !== i && health[j] !== "malfunction" && dist(i, j) < dmin);
+      ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), Math.max(dmin * s, Rof(i) + 2), 0, 2 * Math.PI);
+      ctx.lineWidth = tooClose ? 2 : 1.1; ctx.strokeStyle = tooClose ? C.bad : C.ink3; ctx.globalAlpha = tooClose ? 1 : 0.7; ctx.stroke(); ctx.globalAlpha = 1;
     }
-    // value labels last, with a halo, so they stay readable over links and neighbouring nodes
-    ctx.font = `500 11px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-    ctx.lineJoin = "round"; ctx.lineWidth = 3.5; ctx.strokeStyle = C.panel;
+
+    // drones: fill = sensor type; rings and marks = role / health
     for (let i = 0; i < N; i++) {
-      const R = R0 * Math.sqrt(gamma[i]) ** 0.8, v = isFinite(x[i]) ? x[i] : 0;
-      const txt = Math.abs(v) < 1000 ? v.toFixed(2) : v.toExponential(1);
-      ctx.strokeText(txt, X(pos[i]), Y(pos[i]) + R + 3); ctx.fillStyle = C.ink; ctx.fillText(txt, X(pos[i]), Y(pos[i]) + R + 3);
+      const R = Rof(i), cx = X(pos[i]), cy = Y(pos[i]), down = health[i] === "malfunction";
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+      ctx.globalAlpha = down ? 0.4 : 1; ctx.fillStyle = C.type[type[i]]; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+      if (ok(i) && role[i] === "backup") { ctx.save(); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = C.ink2; ctx.stroke(); ctx.restore(); }
+      if (health[i] === "commslost") { ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 2.2; ctx.strokeStyle = C.bad; ctx.stroke(); }
+      if (i === sel) { ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke(); }
+      ctx.fillStyle = typeText[type[i]]; ctx.font = `600 12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i), cx, cy + 0.5);
+      if (down) {
+        const q = R * 0.95; ctx.strokeStyle = C.bad; ctx.lineWidth = 3; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(cx - q, cy - q); ctx.lineTo(cx + q, cy + q); ctx.moveTo(cx + q, cy - q); ctx.lineTo(cx - q, cy + q); ctx.stroke();
+      }
+    }
+    ctx.font = `500 11px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (let i = 0; i < N; i++) {
+      const v = x[i];
+      const txt = health[i] === "malfunction" ? "offline" : health[i] === "commslost" ? `${fmt(v, 2)} no link` : Math.abs(v) < 1000 ? v.toFixed(2) : v.toExponential(1);
+      halo(ctx, txt, X(pos[i]), Y(pos[i]) + Math.max(Rof(i) + 4, dmin * s * 0.7), health[i] === "ok" ? C.ink : C.bad);
     }
   }
 
-  // ---------------------------------------------------------------- draw: time series
+  // ================================================================ draw: charts
+  function axes(ctx, w, h, m, xt, yt, X, Y, fmtY) {
+    ctx.font = `10.5px ${C.mono}`; ctx.lineWidth = 1; ctx.strokeStyle = C.grid; ctx.fillStyle = C.ink3;
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const v of yt) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke(); ctx.fillText(fmtY(v), m.l - 6, y); }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (const v of xt) { const xx = Math.round(X(v)) + 0.5; if (xx > w - m.r - 34) continue; ctx.fillText(String(v), xx, h - m.b + 6); }
+    ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(m.l, h - m.b + 0.5); ctx.lineTo(w - m.r, h - m.b + 0.5); ctx.stroke();
+    ctx.textAlign = "right"; ctx.fillText("t [s]", w - m.r, h - m.b + 6);
+  }
+  function eventMarks(ctx, X, m, h) {
+    ctx.save(); ctx.font = `10px ${C.mono}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    events.forEach((e, q) => {
+      const xx = Math.round(X(e.t)) + 0.5;
+      ctx.strokeStyle = e.kind === "takeover" ? C.good : C.bad; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(xx, m.t); ctx.lineTo(xx, h - m.b); ctx.stroke();
+      ctx.fillStyle = ctx.strokeStyle; ctx.fillText(e.short, xx + 3, m.t + 2 + 12 * (q % 2));
+    });
+    ctx.restore();
+  }
   let sGeom = null;
   function drawSeries() {
     const { ctx, w, h } = fit(scv);
     ctx.clearRect(0, 0, w, h);
-    const m = { l: 40, r: 28, t: 8, b: 24 };
+    const m = { l: 40, r: 26, t: 8, b: 24 };
     const tMax = Math.max(15, Math.ceil((k * dt) / 5) * 5);
     let lo = 0, hi = 10;
-    for (let q = 0; q <= k; q += Math.max(1, Math.floor(k / 400))) for (const v of hist[q]) if (isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
-    for (const v of hist[k]) if (isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    const sk = Math.max(1, Math.floor(k / 400));
+    for (let q = 0; q <= k; q += sk) for (const v of hist[q]) if (isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
     const yt = niceTicks(lo, hi, 5); lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt[yt.length - 1]);
     const X = (t) => m.l + (t / tMax) * (w - m.l - m.r), Y = (v) => h - m.b - ((v - lo) / (hi - lo)) * (h - m.t - m.b);
-    sGeom = { X, Y, m, tMax, w, h };
-    axes(ctx, w, h, m, niceTicks(0, tMax, 6), yt, X, Y, (v) => String(v), "t [s]");
-
-    // predicted alpha
+    sGeom = { Y, m, tMax, w };
+    axes(ctx, w, h, m, niceTicks(0, tMax, 6), yt, X, Y, (v) => String(v));
+    eventMarks(ctx, X, m, h);
     if (isFinite(alpha)) {
       ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(m.l, Y(alpha)); ctx.lineTo(w - m.r, Y(alpha)); ctx.stroke(); ctx.restore();
-      ctx.fillStyle = C.ink; ctx.font = `11px ${C.mono}`; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
-      ctx.fillText(`α = ${alpha.toFixed(3)}`, w - m.r - 4, Y(alpha) - 3);
+      ctx.font = `11px ${C.mono}`; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      halo(ctx, `${failed ? "new " : ""}α = ${alpha.toFixed(3)}`, m.l + 6, Y(alpha) - 3, C.ink);
     }
-    // lines, decimated to ~ one point per pixel
     const stride = Math.max(1, Math.floor(k / (w - m.l - m.r)));
+    const focus = hoverSeries >= 0 ? hoverSeries : sel;
     ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, w - m.l - m.r, h - m.t - m.b); ctx.clip();
     for (let i = 0; i < N; i++) {
-      const faded = hoverSeries >= 0 && hoverSeries !== i;
-      ctx.strokeStyle = seriesColor(i); ctx.globalAlpha = faded ? 0.2 : 1;
-      ctx.lineWidth = hoverSeries === i ? 3 : 2; ctx.setLineDash(seriesDash(i)); ctx.lineJoin = "round";
-      ctx.beginPath();
-      for (let q = 0; q <= k; q += stride) { const v = hist[q][i]; if (!isFinite(v)) break; q === 0 ? ctx.moveTo(X(times[q]), Y(v)) : ctx.lineTo(X(times[q]), Y(v)); }
-      if (isFinite(hist[k][i])) ctx.lineTo(X(times[k]), Y(hist[k][i]));
+      ctx.strokeStyle = C.type[type[i]]; ctx.globalAlpha = hoverSeries >= 0 && hoverSeries !== i ? 0.2 : 1;
+      ctx.lineWidth = focus === i ? 3 : 1.8; ctx.lineJoin = "round";
+      ctx.beginPath(); let pen = false;
+      for (let q = 0; q <= k; q += stride) { const v = hist[q][i]; if (!isFinite(v)) break; pen ? ctx.lineTo(X(times[q]), Y(v)) : ctx.moveTo(X(times[q]), Y(v)); pen = true; }
+      if (pen && isFinite(hist[k][i])) ctx.lineTo(X(times[k]), Y(hist[k][i]));
       ctx.stroke();
     }
-    ctx.restore(); ctx.globalAlpha = 1; ctx.setLineDash([]);
-    // direct labels: drone id at each line's current end, nudged apart vertically
+    ctx.restore(); ctx.globalAlpha = 1;
     const ends = [];
     for (let i = 0; i < N; i++) if (isFinite(hist[k][i])) ends.push({ i, y: Y(hist[k][i]) });
     ends.sort((a, b) => a.y - b.y);
     for (let q = 1; q < ends.length; q++) if (ends[q].y - ends[q - 1].y < 11) ends[q].y = ends[q - 1].y + 11;
-    const xEnd = X(times[k]);
     ctx.font = `600 10.5px ${C.body}`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    if (ends.length && ends[0].y - 11 * 0 < m.t) {}
-    for (const e of ends) { ctx.fillStyle = C.ink2; ctx.fillText(String(e.i), Math.min(xEnd + 5, w - m.r + 6), Math.max(m.t + 5, Math.min(h - m.b - 4, e.y))); }
+    for (const e of ends) { ctx.fillStyle = C.ink2; ctx.fillText(String(e.i), Math.min(X(times[k]) + 5, w - m.r + 6), Math.max(m.t + 5, Math.min(h - m.b - 4, e.y))); }
   }
-  function axes(ctx, w, h, m, xt, yt, X, Y, fmtY, xlabel) {
-    ctx.font = `10.5px ${C.mono}`; ctx.lineWidth = 1;
-    ctx.strokeStyle = C.grid; ctx.fillStyle = C.ink3;
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for (const v of yt) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke(); ctx.fillText(fmtY(v), m.l - 6, y); }
-    ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for (const v of xt) { const x = Math.round(X(v)) + 0.5; if (x > w - m.r - 34) continue; ctx.fillText(String(v), x, h - m.b + 6); }
-    ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(m.l, h - m.b + 0.5); ctx.lineTo(w - m.r, h - m.b + 0.5); ctx.stroke();
-    ctx.textAlign = "right"; ctx.fillText(xlabel, w - m.r, h - m.b + 6 + 0);
-  }
-
-  // ---------------------------------------------------------------- draw: disagreement (log)
   function drawDis() {
     const { ctx, w, h } = fit(dcv);
     ctx.clearRect(0, 0, w, h);
-    const m = { l: 40, r: 28, t: 8, b: 24 };
+    const m = { l: 40, r: 26, t: 8, b: 24 }, LO = -6, HI = 4;
     const tMax = Math.max(15, Math.ceil((k * dt) / 5) * 5);
-    const LO = -6, HI = 4;   // log10 range 1e-6 .. 1e4
-    const X = (t) => m.l + (t / tMax) * (w - m.l - m.r);
-    const Y = (lv) => h - m.b - ((lv - LO) / (HI - LO)) * (h - m.t - m.b);
-    axes(ctx, w, h, m, niceTicks(0, tMax, 6), [-6, -4, -2, 0, 2, 4], X, Y, (v) => (v === 0 ? "1" : `1e${v}`), "t [s]");
-    if (!isFinite(alpha)) {
-      ctx.fillStyle = C.ink3; ctx.font = `12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Graph is disconnected: no single consensus value", w / 2, h / 2); return;
-    }
+    const X = (t) => m.l + (t / tMax) * (w - m.l - m.r), Y = (lv) => h - m.b - ((lv - LO) / (HI - LO)) * (h - m.t - m.b);
+    axes(ctx, w, h, m, niceTicks(0, tMax, 6), [-6, -4, -2, 0, 2, 4], X, Y, (v) => (v === 0 ? "1" : `1e${v}`));
+    eventMarks(ctx, X, m, h);
+    if (!isFinite(alpha)) { ctx.fillStyle = C.ink3; ctx.font = `12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Network is split: no single shared value", w / 2, h / 2); }
     ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, w - m.l - m.r, h - m.t - m.b); ctx.clip();
-    if (spec && dis[0] > 0) {   // reference slope e^{-mu_2 t}
+    if (spec && ref.e > 0) {   // reference slope e^(-mu_2 t), restarted at the last graph change
       ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink3; ctx.lineWidth = 1.2; ctx.beginPath();
-      ctx.moveTo(X(0), Y(Math.log10(dis[0]))); ctx.lineTo(X(tMax), Y(Math.log10(dis[0]) - (spec.mu2 * tMax) / Math.LN10)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.moveTo(X(ref.t), Y(Math.log10(ref.e))); ctx.lineTo(X(tMax), Y(Math.log10(ref.e) - (spec.mu2 * (tMax - ref.t)) / Math.LN10)); ctx.stroke(); ctx.setLineDash([]);
     }
     const stride = Math.max(1, Math.floor(k / (w - m.l - m.r)));
-    ctx.strokeStyle = C.series[0]; ctx.lineWidth = 2; ctx.beginPath();
-    for (let q = 0; q <= k; q += stride) { const v = Math.log10(Math.max(dis[q], 1e-12)); if (!isFinite(v)) break; q === 0 ? ctx.moveTo(X(times[q]), Y(v)) : ctx.lineTo(X(times[q]), Y(v)); }
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); let pen = false;
+    for (let q = 0; q <= k; q += stride) { const v = Math.log10(Math.max(dis[q], 1e-12)); if (!isFinite(v)) { pen = false; continue; } pen ? ctx.lineTo(X(times[q]), Y(v)) : ctx.moveTo(X(times[q]), Y(v)); pen = true; }
     ctx.stroke(); ctx.restore();
   }
 
-  // ---------------------------------------------------------------- readouts
-  const fmt = (v, d = 3) => (isFinite(v) ? v.toFixed(d) : "–");
-  function updateReadouts() {
-    const x = hist[k];
-    $("r-t").textContent = `${(k * dt).toFixed(1)} s`;
-    $("r-alpha").textContent = fmt(alpha);
-    $("r-avg").textContent = fmt(x0.reduce((s, v) => s + v, 0) / N);
-    const fin = x.filter(isFinite);
-    $("r-spread").textContent = fin.length === N ? (Math.max(...fin) - Math.min(...fin)).toExponential(2) : "∞";
-    $("r-mu2").textContent = spec ? spec.mu2.toFixed(3) : "–";
-    $("r-conv").textContent = tConv !== null ? `${tConv.toFixed(1)} s` : "–";
-    $("dt-hint").textContent = spec ? `Euler limit 2/μₙ = ${(2 / spec.muN).toFixed(2)} s` : "Euler limit 2/μₙ = –";
-    updateLive();
-    $("tau-hint").textContent = spec ? `bound τ_max = π/(2μₙ) = ${spec.tauMax.toFixed(2)} s` : "bound τ_max = – (graph disconnected)";
-    const st = $("status");
-    if (!connected) { st.className = "pill warn"; st.textContent = "Disconnected: groups agree separately"; }
-    else if (spec && dt >= 2 / spec.muN && !(tau >= spec.tauMax)) { st.className = "pill bad"; st.textContent = "Unstable: dt too big for Euler"; }
-    else if (diverged) { st.className = "pill bad"; st.textContent = "Diverged: delay above bound"; }
-    else if (spec && tau >= spec.tauMax) { st.className = "pill bad"; st.textContent = "Unstable: τ ≥ τ_max, oscillates"; }
-    else if (tConv !== null) { st.className = "pill good"; st.textContent = "Agreed within 1%"; }
-    else { st.className = "pill good"; st.textContent = "Converging"; }
+  // ================================================================ fleet panel
+  let dotEls = [];
+  function buildFleet() {
+    dotEls = [...Array(N).keys()].map((i) => {
+      const slot = document.createElement("div"); slot.className = "slot";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = i;
+      b.addEventListener("click", () => select(i));
+      b.addEventListener("pointerenter", () => { hoverNode = i; hoverSeries = i; });
+      b.addEventListener("pointerleave", () => { hoverNode = -1; hoverSeries = -1; });
+      const v = document.createElement("small"); slot.append(b, v);
+      return { slot, b, v };
+    });
+    placeFleet();
+  }
+  function placeFleet() {
+    const boxes = { task: $("dots-task"), backup: $("dots-backup"), out: $("dots-out") };
+    Object.values(boxes).forEach((el) => (el.innerHTML = ""));
+    const count = { task: 0, backup: 0, out: 0 };
+    for (let i = 0; i < N; i++) {
+      const where = !ok(i) ? "out" : role[i] === "active" ? "task" : "backup"; count[where]++;
+      const st = !ok(i) ? health[i] : role[i];
+      dotEls[i].b.className = `dot ${type[i]} ${st}${i === sel ? " sel" : ""}`;
+      dotEls[i].b.setAttribute("aria-label", `Drone ${i}, ${type[i]}, ${st === "active" ? "on Task 1" : st === "backup" ? "backup" : st === "malfunction" ? "out: malfunction" : "out: comms lost"}`);
+      boxes[where].appendChild(dotEls[i].slot);
+    }
+    for (const key of ["task", "backup", "out"]) {
+      $(`c-${key}`).textContent = `${count[key]}`;
+      if (!count[key]) boxes[key].innerHTML = `<span class="empty">${key === "backup" ? "none" : key === "out" ? "all healthy" : "no drones"}</span>`;
+    }
+    $("log").innerHTML = events.map((e) => `<li><b>t = ${e.t.toFixed(1)} s</b> ${e.text}</li>`).join("");
+  }
+  function updateFleetValues() {
+    for (let i = 0; i < N; i++) {
+      dotEls[i].v.textContent = health[i] === "malfunction" ? "offline" : fmt(hist[k][i], 2);
+      dotEls[i].b.classList.toggle("sel", i === sel);
+    }
   }
 
-  // Term-by-term view of the equation for the selected (or hovered) drone, at the current time.
+  // ================================================================ matrices, live table, transcript
+  function cell(v, scale) {
+    if (Math.abs(v) < 5e-4) return `<td class="z">0</td>`;
+    const mag = Math.min(1, Math.abs(v) / scale), col = v > 0 ? C.pos : C.neg;
+    return `<td style="background:color-mix(in srgb, ${col} ${Math.round(10 + 48 * mag)}%, transparent)">${Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(2)}</td>`;
+  }
+  function renderMatrices() {
+    const t = k * dt;
+    const head = `<tr><th></th>${[...Array(N).keys()].map((j) => `<th><i style="background:${C.type[type[j]]}"></i>${j}</th>`).join("")}</tr>`;
+    let A = head, D = head, L = head;
+    for (let i = 0; i < N; i++) {
+      const rA = [], rD = [], rL = [];
+      let di = 0;
+      for (const j of nbrs[i]) { const l = links[linkAt[i][j]]; if (l.up) di += effWeight(l, t); }
+      for (let j = 0; j < N; j++) {
+        if (i === j) { rA.push(cell(0, 1)); rD.push(cell(di, 4)); rL.push(cell(di, 4)); continue; }
+        rD.push(cell(0, 1));
+        const li = linkAt[i][j];
+        if (li < 0) { rA.push(cell(0, 1)); rL.push(cell(0, 1)); continue; }
+        const l = links[li];
+        if (!l.up) { const off = `<td class="off" title="in range but dropped">${l.a.toFixed(2)}</td>`; rA.push(off); rL.push(off); continue; }
+        const a = effWeight(l, t); rA.push(cell(a, 1)); rL.push(cell(-a, 1));
+      }
+      const cls = i === sel ? ' class="sel"' : "", th = `<th><i style="background:${C.type[type[i]]}"></i>${i}</th>`;
+      A += `<tr${cls}>${th}${rA.join("")}</tr>`; D += `<tr${cls}>${th}${rD.join("")}</tr>`; L += `<tr${cls}>${th}${rL.join("")}</tr>`;
+    }
+    $("mat-A").innerHTML = `<table class="m">${A}</table>`;
+    $("mat-D").innerHTML = `<table class="m">${D}</table>`;
+    $("mat-L").innerHTML = `<table class="m">${L}</table>`;
+    matDirty = false;
+  }
   function updateLive() {
-    const i = hoverNode >= 0 ? hoverNode : sel;
-    const d = Math.round(tau / dt), sent = hist[Math.max(k - d, 0)];
-    $("live-title").textContent = `Drone ${i} right now (t = ${(k * dt).toFixed(1)} s)`;
+    const i = hoverNode >= 0 ? hoverNode : sel, t = k * dt;
+    $("live-title").textContent = `Drone ${i} (${type[i]}) right now, t = ${t.toFixed(1)} s`;
+    if (health[i] === "malfunction") { $("live-body").innerHTML = `<tr><td colspan="8">drone ${i} is offline (malfunction)</td></tr>`; $("live-foot").innerHTML = ""; return; }
     let sum = 0, rows = "";
     for (const j of nbrs[i]) {
-      const dij = Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]);
-      const diff = sent[j] - sent[i], term = A[i][j] * diff; sum += term;
-      rows += `<tr><td>${j}</td><td>${dij.toFixed(1)}</td><td>${A[i][j].toFixed(3)}</td><td>${fmt(diff)}</td><td>${fmt(term)}</td></tr>`;
+      const l = links[linkAt[i][j]], hh = hist[idxOf(l.tSent)], age = t - l.tSent;
+      const diff = hh[j] - hh[i], at = effWeight(l, t), term = at * diff; sum += term;
+      rows += `<tr><td>${j}${l.up ? "" : " (dropped)"}</td><td>${dist(i, j).toFixed(1)}</td><td>${l.a.toFixed(3)}</td><td>${age.toFixed(2)}</td><td>${ageFactor(age).toFixed(3)}</td><td>${at.toFixed(3)}</td><td>${fmt(diff)}</td><td>${fmt(term)}</td></tr>`;
     }
-    $("live-body").innerHTML = rows || `<tr><td colspan="5">no neighbours: drone ${i} holds its value</td></tr>`;
+    $("live-body").innerHTML = rows || `<tr><td colspan="8">${health[i] === "commslost" ? "comms lost" : "no neighbours"}: drone ${i} holds its value</td></tr>`;
     const xdot = deg[i] ? sum / deg[i] / gamma[i] : 0;
-    $("live-foot").innerHTML = `<tr><td colspan="4">Σ / |N<sub>i</sub>| = ${fmt(sum)} / ${deg[i]}, then ÷ γ<sub>i</sub> = ${gamma[i]}</td><td>ẋ = ${fmt(xdot)}</td></tr>`;
+    $("live-foot").innerHTML = `<tr><td colspan="7">sum ${fmt(sum)} ÷ |N<sub>i</sub>| = ${deg[i]} ÷ γ<sub>i</sub> = ${gamma[i]}</td><td>ẋ = ${fmt(xdot)}</td></tr>`;
+  }
+  function renderTranscript() {
+    const only = ui.txsel.checked, rows = [];
+    for (let q = tx.length - 1; q >= 0 && rows.length < 120; q--) {
+      const e = tx[q];
+      if (only && e.about !== "all" && !e.about.includes(sel)) continue;
+      rows.push(`<div>${e.html}</div>`);
+    }
+    $("tx").innerHTML = rows.join("") || `<div class="t">No messages yet.</div>`;
+    txDirty = false;
   }
 
-  // ---------------------------------------------------------------- loop
+  // ================================================================ readouts
+  function updateReadouts() {
+    const t = k * dt, x = hist[k];
+    $("r-t").textContent = `${t.toFixed(1)} s`;
+    $("r-alpha").textContent = fmt(alpha);
+    const fin = liveIdx().map((i) => x[i]).filter(isFinite);
+    $("r-spread").textContent = fin.length ? (Math.max(...fin) - Math.min(...fin)).toExponential(2) : "–";
+    $("r-mu2").textContent = spec ? spec.mu2.toFixed(3) : "–";
+    $("r-conv").textContent = tConv !== null ? `${tConv.toFixed(1)} s` : "–";
+    const now = isConnectedBy((l) => l.up), joint = isConnectedBy((l) => l.lastUp >= t - JOINT_WIN);
+    const yn = (el, v) => { el.textContent = v ? "yes" : "no"; el.className = v ? "yes" : "no"; };
+    yn($("r-conn"), now); yn($("r-joint"), joint);
+    const cp = closestPair();
+    $("r-close").textContent = isFinite(cp.d) ? `${cp.d.toFixed(1)} m${cp.d < dmin ? " (too close)" : ""}` : "–";
+    $("r-close").className = cp.d < dmin ? "no" : "";
+    $("tau-hint").textContent = spec ? `stable if τ < τ_max = π/(2μₙ) = ${spec.tauMax.toFixed(2)} s` : "τ_max: – (network split)";
+    $("dt-hint").textContent = spec ? `stable if dt < 2/μₙ = ${(2 / spec.muN).toFixed(2)} s` : "–";
+    $("fail-hint").textContent = failMode === "none" ? "no failure in this run" : `drone ${failDrone} (${role0[failDrone]}, ${type[failDrone]}) will fail`;
+    const st = $("status"), set = (c, s) => { st.className = `pill ${c}`; st.textContent = s; };
+    if (!connected) set("warn", failed ? "Network split by the failure" : "Disconnected: groups agree separately");
+    else if (spec && dt >= 2 / spec.muN && !(tau >= spec.tauMax)) set("bad", "Unstable: dt too big for Euler");
+    else if (diverged) set("bad", "Diverged: delay above bound");
+    else if (spec && tau >= spec.tauMax) set("bad", "Unstable: τ ≥ τ_max, oscillates");
+    else if (tConv !== null) set("good", "Agreed within 1%");
+    else if (!joint) set("bad", "Not jointly connected: stuck");
+    else if (!now) set("warn", "Links dropping, still jointly connected");
+    else set("good", "Converging");
+    updateLive(); updateFleetValues();
+  }
+
+  // ================================================================ loop
   let last = performance.now();
-  function frame(now) {
-    const realDt = Math.min(0.1, (now - last) / 1000); last = now;
+  function frame(nowMs) {
+    const realDt = Math.min(0.1, (nowMs - last) / 1000); last = nowMs;
     if (running && !finished) {
       acc += SPEEDS[speedIdx] * realDt;
       let n = 0;
       while (acc >= dt && !finished && n++ < 5000) { step(); acc -= dt; }
-      emitPulses(k * dt);
       if (finished) { running = false; ui.play.textContent = "Play"; }
+      matDirty = true;
     }
-    render();
+    drawGraph(); drawSeries(); drawDis(); updateReadouts();
+    if (matDirty && nowMs - lastMat > 250) { renderMatrices(); lastMat = nowMs; }
+    if (txDirty) renderTranscript();
     requestAnimationFrame(frame);
   }
-  function render() { drawGraph(); drawSeries(); drawDis(); updateReadouts(); }
 
-  // ---------------------------------------------------------------- interaction
+  // ================================================================ interaction
   function syncLabels() {
-    $("n-out").textContent = N; $("rc-out").textContent = `${rc} m`;
-    $("tau-out").textContent = `${tau.toFixed(2)} s`; $("speed-out").textContent = `${SPEEDS[speedIdx]}×`;
-    $("sigma-out").textContent = `${sigma} m`; $("dt-out").textContent = `${dt < 0.01 ? dt.toFixed(4) : dt.toFixed(3)} s`;
-    $("gam-id").textContent = sel; $("gam-out").textContent = gamma[sel].toFixed(1); ui.gam.value = gamma[sel];
+    $("n-out").textContent = N; $("drone-count").textContent = N; $("ntypes-out").textContent = nTypes;
+    $("dmin-out").textContent = `${dmin} m`; $("rc-out").textContent = `${rc} m`; $("sigma-out").textContent = `${sigma} m`;
+    $("tau-out").textContent = `${tau.toFixed(2)} s`; $("loss-out").textContent = `${Math.round(loss * 100)} %`;
+    $("T-out").textContent = isFinite(Tage) ? `${Tage} s` : "off";
+    $("dt-out").textContent = `${dt < 0.01 ? dt.toFixed(4) : dt.toFixed(3)} s`; $("speed-out").textContent = `${SPEEDS[speedIdx]}×`;
+    $("tfail-out").textContent = `${tFail} s`;
+    $("mode-hint").textContent = { none: "all drones stay healthy", malfunction: "drone drops out of the network", commslost: "drone keeps flying but hears no one" }[failMode];
+    $("sel-name").textContent = `Drone ${sel} · ${type[sel]} · ${role0[sel] === "backup" ? "backup" : "Task 1"}`;
+    $("sel-sw").style.background = `var(${typeVar[type[sel]]})`;
+    $("gam-out").textContent = gamma[sel].toFixed(1); ui.gam.value = gamma[sel];
   }
-  ui.n.addEventListener("input", () => { N = +ui.n.value; newLayout(); syncLabels(); restart(); $("drone-count").textContent = N; });
-  ui.rc.addEventListener("input", () => { rc = +ui.rc.value; syncLabels(); buildEdges(); restart(); });
-  ui.tau.addEventListener("input", () => { tau = +ui.tau.value; syncLabels(); restart(); });
-  ui.speed.addEventListener("input", () => { speedIdx = +ui.speed.value; syncLabels(); });
-  ui.sigma.addEventListener("input", () => { sigma = +ui.sigma.value; buildEdges(); syncLabels(); restart(); });
-  ui.gam.addEventListener("input", () => { gamma[sel] = +ui.gam.value; syncLabels(); restart(); });
-  ui.dt.addEventListener("input", () => { dt = DTS[+ui.dt.value]; syncLabels(); restart(); });
-  ui.play.addEventListener("click", () => {
-    if (finished) restart(); else { running = !running; ui.play.textContent = running ? "Pause" : "Play"; }
-  });
+  function select(i) { sel = i; syncLabels(); txDirty = true; renderMatrices(); }
+  const onInput = (el, fn, restartAfter = true) => el.addEventListener("input", () => { fn(); syncLabels(); if (restartAfter) restart(); });
+  onInput(ui.n, () => { N = +ui.n.value; newLayout(); });
+  onInput(ui.ntypes, () => { nTypes = +ui.ntypes.value; for (let i = 0; i < N; i++) type[i] = TYPES[i % nTypes]; });
+  onInput(ui.dmin, () => { dmin = +ui.dmin.value; }, false);
+  onInput(ui.rc, () => { rc = +ui.rc.value; });
+  onInput(ui.sigma, () => { sigma = +ui.sigma.value; });
+  onInput(ui.tau, () => { tau = +ui.tau.value; });
+  onInput(ui.loss, () => { loss = +ui.loss.value; });
+  onInput(ui.T, () => { Tage = TS[+ui.T.value]; });
+  onInput(ui.gam, () => { gamma[sel] = +ui.gam.value; });
+  onInput(ui.tfail, () => { tFail = +ui.tfail.value; });
+  onInput(ui.dt, () => { dt = DTS[+ui.dt.value]; });
+  onInput(ui.speed, () => { speedIdx = +ui.speed.value; }, false);
+  document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", () => { failMode = r.value; syncLabels(); restart(); }));
+  ui.takeover.addEventListener("change", restart);
+  ui.failsel.addEventListener("click", () => { failDrone = sel; restart(); });
+  ui.txsel.addEventListener("change", renderTranscript);
+  ui.play.addEventListener("click", () => { if (finished) restart(); else { running = !running; ui.play.textContent = running ? "Pause" : "Play"; } });
   ui.restart.addEventListener("click", restart);
-  ui.shuffle.addEventListener("click", () => { newLayout(); restart(); });
+  ui.shuffle.addEventListener("click", () => { newLayout(); syncLabels(); restart(); });
 
   function nodeAt(ev) {
     if (!gGeom) return -1;
@@ -660,44 +1013,37 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
     hoverNode = nodeAt(ev); hoverSeries = hoverNode;
     if (hoverNode < 0) { gtip.hidden = true; return; }
     const i = hoverNode, card = gcv.parentElement.getBoundingClientRect();
-    gtip.innerHTML = `<div><b>Drone ${i}</b></div><div>x = ${fmt(hist[k][i])}</div><div>x(0) = ${fmt(x0[i])}</div><div>|N| = ${deg[i]}, γ = ${gamma[i]}</div><div>w = γ|N| = ${gamma[i] * deg[i]}</div>`;
+    const stName = !ok(i) ? (health[i] === "malfunction" ? "out: malfunction" : "out: comms lost") : role[i] === "active" ? "Task 1" : "backup";
+    gtip.textContent = `Drone ${i} · ${type[i]} · ${stName}\nx = ${fmt(hist[k][i])}, x(0) = ${fmt(x0[i])}\n|N| = ${deg[i]}, γ = ${gamma[i]}, w = γ|N| = ${(gamma[i] * deg[i]).toFixed(1)}`;
     gtip.hidden = false;
-    gtip.style.left = `${Math.min(ev.clientX - card.left + 14, card.width - 130)}px`; gtip.style.top = `${ev.clientY - card.top + 10}px`;
+    gtip.style.left = `${Math.max(4, Math.min(ev.clientX - card.left + 14, card.width - 230))}px`; gtip.style.top = `${ev.clientY - card.top + 10}px`;
   });
   gcv.addEventListener("pointerleave", () => { hoverNode = -1; hoverSeries = -1; gtip.hidden = true; });
-  gcv.addEventListener("click", (ev) => {
-    const i = nodeAt(ev); if (i < 0) return;
-    sel = i; syncLabels();
-  });
-
+  gcv.addEventListener("click", (ev) => { const i = nodeAt(ev); if (i >= 0) select(i); });
   scv.addEventListener("pointermove", (ev) => {
     if (!sGeom) return;
     const r = scv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
-    const { m, w, tMax } = sGeom;
-    if (mx < m.l || mx > w - m.r) { stip.hidden = true; hoverSeries = -1; return; }
-    const t = ((mx - m.l) / (w - m.l - m.r)) * tMax;
-    if (t > k * dt) { stip.hidden = true; hoverSeries = -1; return; }
-    const q = Math.min(k, Math.round(t / dt)), xs = hist[q];
-    // nearest line to the pointer becomes highlighted
+    const { m, w, tMax } = sGeom, t = ((mx - m.l) / (w - m.l - m.r)) * tMax;
+    if (mx < m.l || mx > w - m.r || t > k * dt) { stip.hidden = true; hoverSeries = -1; return; }
+    const q = idxOf(t), xs = hist[q];
     let best = -1, bd = 14;
-    for (let i = 0; i < N; i++) { const d = Math.abs(sGeom.Y(xs[i]) - my); if (d < bd) { bd = d; best = i; } }
+    for (let i = 0; i < N; i++) { if (!isFinite(xs[i])) continue; const d = Math.abs(sGeom.Y(xs[i]) - my); if (d < bd) { bd = d; best = i; } }
     hoverSeries = best;
-    const rows = xs.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v)
-      .map(({ v, i }) => `<div class="row"><i style="background:${seriesColor(i)}"></i>${i}: ${fmt(v)}${i === best ? " ◂" : ""}</div>`).join("");
+    const rows = xs.map((v, i) => ({ v, i })).filter((o) => isFinite(o.v)).sort((a, b) => b.v - a.v)
+      .map(({ v, i }) => `<div class="row"><i style="background:${C.type[type[i]]}"></i>${i} ${type[i].padEnd(7)} ${fmt(v)}${i === best ? " ◂" : ""}</div>`).join("");
     stip.innerHTML = `<div><b>t = ${(q * dt).toFixed(2)} s</b></div>${rows}`;
     const card = scv.parentElement.getBoundingClientRect();
     stip.hidden = false;
-    stip.style.left = `${Math.min(ev.clientX - card.left + 14, card.width - 120)}px`; stip.style.top = `${Math.max(4, ev.clientY - card.top - 40)}px`;
+    stip.style.left = `${Math.max(4, Math.min(ev.clientX - card.left + 14, card.width - 170))}px`; stip.style.top = `${Math.max(4, ev.clientY - card.top - 40)}px`;
   });
   scv.addEventListener("pointerleave", () => { stip.hidden = true; hoverSeries = -1; });
 
-  // theme changes: re-read tokens
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
   new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  // ---------------------------------------------------------------- boot
+  // ================================================================ boot
   readTheme(); newLayout(); syncLabels(); restart();
-  if (reduceMotion) speedIdx = 5, ui.speed.value = 5, syncLabels();   // finish quickly instead of animating slowly
+  if (reduceMotion) { speedIdx = 5; ui.speed.value = 5; syncLabels(); }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(readTheme);
   requestAnimationFrame(frame);
 })();

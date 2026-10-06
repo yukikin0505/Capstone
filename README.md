@@ -46,7 +46,7 @@ See [`docs/consensus_step1.md`](docs/consensus_step1.md).
   <img src="docs/figures/consensus_delay.png" width="50%">
 </p>
 
-**Interactive demo:** open [`tools/consensus_lab.html`](tools/consensus_lab.html) in a browser. It shows the comms graph animating as the drones agree and live charts, with sliders for the number of drones, comms radius, weight falloff, delay, confidence and Euler step.
+**Interactive demo:** open [`tools/consensus_lab.html`](tools/consensus_lab.html) in a browser. It shows the swarm diagram, fleet roles (task, backups, out of service), a failure with backup takeover, packet loss and fading information, live A / D / L matrices, charts and a comms transcript. It goes beyond the Python step 1: packet loss, age weighting, sensor types and roles are only in the demo so far.
 
 **Next:** moving drones with switching topology, vector states, and the 2D search scenario (see
 [`docs/roadmap.md`](docs/roadmap.md)).
