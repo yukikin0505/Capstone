@@ -1,0 +1,704 @@
+<title>Swarm Consensus Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument panel. Controls + readouts on top, comms graph left, live charts right; stacks on phones. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --ink: #101418;
+  --ink-2: #4d5660;
+  --ink-3: #7c8692;
+  --rule: #dde1e6;
+  --grid: #eceff2;
+  --accent: #2a78d6;
+  --good: #1a7f4b;
+  --bad: #c2372f;
+  --warn: #9a6400;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  --seq0: #cde2fb; --seq1: #86b6ef; --seq2: #3987e5; --seq3: #1c5cab; --seq4: #0d366b;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121518; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
+    --rule: #2d333a; --grid: #242a30; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --seq0: #184f95; --seq1: #256abf; --seq2: #3987e5; --seq3: #86b6ef; --seq4: #cde2fb;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121518; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
+  --rule: #2d333a; --grid: #242a30; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --seq0: #184f95; --seq1: #256abf; --seq2: #3987e5; --seq3: #86b6ef; --seq4: #cde2fb;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap > * { min-width: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 32px; display: grid; gap: 14px; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 1.6rem; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+.law { font-size: 0.85rem; color: var(--ink-2); margin: 0; }
+
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 22px; padding: 14px 16px; align-items: end; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; font-weight: 500; color: var(--ink-2); }
+.ctl output { font-family: var(--f-mono); font-size: 0.85rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ctl .hint { font-size: 0.72rem; color: var(--ink-3); min-height: 1.1em; font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 500 0.85rem var(--f-body); padding: 7px 14px; border-radius: 5px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--ink-3); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; min-width: 84px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.readouts { display: flex; flex-wrap: wrap; gap: 8px 26px; padding: 10px 16px; align-items: center; }
+.ro { display: grid; gap: 0; }
+.ro span { font-size: 0.74rem; color: var(--ink-3); }
+.ro b { font: 500 1.02rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.pill { margin-left: auto; font: 500 0.78rem var(--f-body); padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; display: inline-flex; gap: 6px; align-items: center; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.good { color: var(--good); } .pill.bad { color: var(--bad); } .pill.warn { color: var(--warn); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; }
+@media (max-width: 820px) { .stage { grid-template-columns: minmax(0, 1fr); } .pill { margin-left: 0; } }
+.card { padding: 10px 12px 12px; display: grid; gap: 6px; min-width: 0; position: relative; }
+.card h2 { font: 600 0.95rem var(--f-display); letter-spacing: 0.01em; color: var(--ink); margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; }
+.card h2 small { font: 400 0.74rem var(--f-body); color: var(--ink-3); }
+.charts { display: grid; gap: 14px; min-width: 0; }
+canvas { width: 100%; display: block; touch-action: manipulation; }
+#graph { aspect-ratio: 1 / 1; cursor: pointer; }
+#series { aspect-ratio: 16 / 8; }
+#dis { aspect-ratio: 16 / 5.2; }
+
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 6px 8px; font: 0.75rem var(--f-mono); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,0.12); white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums; }
+.tip .row { display: flex; gap: 8px; align-items: center; }
+.tip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.note { font-size: 0.78rem; color: var(--ink-3); margin: 0; }
+
+.eq { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 14px 22px; padding: 14px 16px; }
+@media (max-width: 820px) { .eq { grid-template-columns: minmax(0, 1fr); } }
+.eq-main { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.formula { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 1.35rem; line-height: 1.6; overflow-x: auto; white-space: nowrap; padding-block: 2px; }
+.formula.sm { font-size: 1.02rem; color: var(--ink-2); }
+.formula var { font-style: italic; }
+.formula sub, .formula sup { font-size: 0.68em; }
+.frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 0.15em; }
+.frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 0.15em; }
+.big { font-size: 1.5em; vertical-align: -0.12em; }
+.terms { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+.terms b { font-family: var(--f-mono); font-weight: 500; color: var(--ink); }
+.live { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.live h3 { font: 600 0.95rem var(--f-display); color: var(--ink); margin: 0; }
+.tbl { overflow-x: auto; }
+.live table { border-collapse: collapse; width: 100%; font: 0.78rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.live th { font: 500 0.74rem var(--f-body); color: var(--ink-3); white-space: nowrap; text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--rule); }
+.live td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--grid); }
+.live th:first-child, .live td:first-child { text-align: left; }
+.live tfoot td { border-bottom: 0; color: var(--ink); font-weight: 500; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.82rem; color: var(--ink-2); }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Swarm Consensus Lab</h1>
+    <p class="law"><span id="drone-count">8</span> drones, no leader: each one only listens to its neighbours</p>
+  </header>
+
+  <section class="panel eq" aria-label="Consensus equation">
+    <div class="eq-main">
+      <div class="formula" aria-label="gamma i times x i dot equals one over the number of neighbours times the sum over neighbours of a i j times the delayed difference">
+        <var>γ</var><sub><var>i</var></sub>&thinsp;<var>ẋ</var><sub><var>i</var></sub>(<var>t</var>) =
+        <span class="frac"><span>1</span><span>|<var>N</var><sub><var>i</var></sub>|</span></span>
+        <span class="big">Σ</span><sub><var>j</var>∈<var>N</var><sub><var>i</var></sub></sub>
+        <var>a</var><sub><var>ij</var></sub> [ <var>x</var><sub><var>j</var></sub>(<var>t</var>−<var>τ</var>) − <var>x</var><sub><var>i</var></sub>(<var>t</var>−<var>τ</var>) ]
+      </div>
+      <div class="formula sm">
+        <var>a</var><sub><var>ij</var></sub> = e<sup>−<var>d</var><sub><var>ij</var></sub>²/<var>σ</var>²</sup> if <var>d</var><sub><var>ij</var></sub> ≤ <var>r</var><sub>c</sub>, else 0
+        &emsp;·&emsp; <var>α</var> = Σ<var>w</var><sub><var>i</var></sub><var>x</var><sub><var>i</var></sub>(0) / Σ<var>w</var><sub><var>i</var></sub>, &nbsp;<var>w</var><sub><var>i</var></sub> = <var>γ</var><sub><var>i</var></sub>|<var>N</var><sub><var>i</var></sub>|
+        &emsp;·&emsp; stable iff <var>τ</var> &lt; π/(2<var>μ</var><sub><var>n</var></sub>)
+      </div>
+      <ul class="terms">
+        <li><b>x<sub>i</sub></b> drone i's value</li>
+        <li><b>N<sub>i</sub></b> drones within r<sub>c</sub></li>
+        <li><b>a<sub>ij</sub></b> link weight, closer = stronger</li>
+        <li><b>γ<sub>i</sub></b> confidence, higher = moves less</li>
+        <li><b>τ</b> message delay</li>
+        <li><b>μ<sub>2</sub>, μ<sub>n</sub></b> slowest / fastest mode of L̂</li>
+      </ul>
+    </div>
+    <div class="live">
+      <h3 id="live-title">Drone 0 right now</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>from j</th><th>d<sub>ij</sub> [m]</th><th>a<sub>ij</sub></th><th>x<sub>j</sub>−x<sub>i</sub> (t−τ)</th><th>a<sub>ij</sub>·diff</th></tr></thead>
+        <tbody id="live-body"></tbody>
+        <tfoot id="live-foot"></tfoot>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="panel controls" aria-label="Simulation controls">
+    <div class="ctl">
+      <label for="n">Drones <output id="n-out">8</output></label>
+      <input id="n" type="range" min="2" max="10" step="1" value="8">
+      <div class="hint">new random layout and values</div>
+    </div>
+    <div class="ctl">
+      <label for="rc">Comms radius r<sub>c</sub> <output id="rc-out">40 m</output></label>
+      <input id="rc" type="range" min="15" max="100" step="1" value="40">
+      <div class="hint" id="rc-hint">link iff distance ≤ r<sub>c</sub></div>
+    </div>
+    <div class="ctl">
+      <label for="sigma">Weight falloff σ <output id="sigma-out">40 m</output></label>
+      <input id="sigma" type="range" min="5" max="150" step="1" value="40">
+      <div class="hint">a<sub>ij</sub> = e<sup>−d²/σ²</sup>; small σ = far links weak</div>
+    </div>
+    <div class="ctl">
+      <label for="tau">Delay τ <output id="tau-out">0.00 s</output></label>
+      <input id="tau" type="range" min="0" max="3" step="0.05" value="0">
+      <div class="hint" id="tau-hint">bound τ_max = –</div>
+    </div>
+    <div class="ctl">
+      <label for="gam">Confidence γ of drone <span id="gam-id">0</span> <output id="gam-out">1.0</output></label>
+      <input id="gam" type="range" min="0.5" max="5" step="0.1" value="1">
+      <div class="hint">click a drone in the graph to select it</div>
+    </div>
+    <div class="ctl">
+      <label for="dt">Euler step dt <output id="dt-out">0.010 s</output></label>
+      <input id="dt" type="range" min="0" max="20" step="1" value="4">
+      <div class="hint" id="dt-hint">Euler limit 2/μₙ = –</div>
+    </div>
+    <div class="ctl">
+      <label for="speed">Playback <output id="speed-out">2×</output></label>
+      <input id="speed" type="range" min="0" max="5" step="1" value="2">
+      <div class="hint">simulated seconds per real second</div>
+    </div>
+    <label class="check" for="disks"><input id="disks" type="checkbox" checked> Show every drone's comms radius</label>
+    <div class="buttons">
+      <button id="play" class="primary" type="button">Pause</button>
+      <button id="restart" type="button">Restart</button>
+      <button id="shuffle" type="button">New layout</button>
+    </div>
+  </section>
+
+  <section class="panel readouts" aria-label="Live readouts">
+    <div class="ro"><span>Time</span><b id="r-t">0.0 s</b></div>
+    <div class="ro"><span>Predicted α</span><b id="r-alpha">–</b></div>
+    <div class="ro"><span>Plain average</span><b id="r-avg">–</b></div>
+    <div class="ro"><span>Spread max−min</span><b id="r-spread">–</b></div>
+    <div class="ro"><span>μ₂ (speed)</span><b id="r-mu2">–</b></div>
+    <div class="ro"><span>Within 1% at</span><b id="r-conv">–</b></div>
+    <span class="pill good" id="status">Converging</span>
+  </section>
+
+  <section class="stage">
+    <div class="panel card">
+      <h2>Comms graph <small>click a drone to select it</small></h2>
+      <canvas id="graph" aria-label="Drone positions and communication links, coloured by current value"></canvas>
+      <p class="note">Node colour is the drone's current value x<sub>i</sub>; the colours even out as the swarm agrees. Thicker links are closer drones. Dots on links are messages in flight when τ &gt; 0. Bigger nodes have higher confidence γ. Dashed circles are comms radii; the selected drone's is darker.</p>
+      <div class="tip" id="gtip" hidden></div>
+    </div>
+    <div class="charts">
+      <div class="panel card">
+        <h2>Values x<sub>i</sub>(t) <small>dashed line: predicted α</small></h2>
+        <canvas id="series" aria-label="Each drone's value over time"></canvas>
+        <div class="tip" id="stip" hidden></div>
+      </div>
+      <div class="panel card">
+        <h2>Disagreement ‖x − α1‖ <small>log scale · dashed slope e<sup>−μ₂t</sup></small></h2>
+        <canvas id="dis" aria-label="Disagreement over time on a log scale"></canvas>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  // ---------------------------------------------------------------- parameters
+  const AREA = 100, T_END = 60, MAX_REDRAWS = 3000;
+  const DTS = [0.001, 0.002, 0.005, 0.0075, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
+  let dt = 0.01;
+  const SPEEDS = [0.5, 1, 2, 4, 8, 16];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const $ = (id) => document.getElementById(id);
+  const ui = {
+    n: $("n"), rc: $("rc"), tau: $("tau"), speed: $("speed"), sigma: $("sigma"), gam: $("gam"), dt: $("dt"), disks: $("disks"),
+    play: $("play"), restart: $("restart"), shuffle: $("shuffle"),
+  };
+
+  // Seeded RNG (mulberry32) so a layout is reproducible within a session.
+  let seed = 1;
+  function rng() {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  // ---------------------------------------------------------------- state
+  let N = 8, rc = 40, sigma = 40, tau = 0, speedIdx = 2, sel = 0, acc = 0;
+  let pos = [], x0 = [], gamma = [];
+  let A = [], nbrs = [], deg = [];       // a_ij, neighbour lists N_i, |N_i|
+  let spec = null, alpha = NaN, connected = true;
+  let hist = [], times = [], dis = [];   // x(t_k) history (also the delay buffer)
+  let k = 0, running = true, finished = false, tConv = null, diverged = false;
+  let pulses = [], nextEmit = 0;
+  let hoverNode = -1, hoverSeries = -1;
+
+  // ---------------------------------------------------------------- graph (comms layer)
+  function buildEdges() {
+    A = Array.from({ length: N }, () => new Array(N).fill(0));
+    nbrs = Array.from({ length: N }, () => []);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      const d = Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]);
+      if (d <= rc) {                         // link iff d_ij <= r_c
+        A[i][j] = Math.exp(-(d * d) / (sigma * sigma));   // a_ij = exp(-d^2/sigma^2)
+        nbrs[i].push(j);
+      }
+    }
+    deg = nbrs.map((nb) => nb.length);
+    connected = isConnected();
+  }
+  function isConnected() {
+    const seen = new Set([0]), stack = [0];
+    while (stack.length) { const i = stack.pop(); for (const j of nbrs[i]) if (!seen.has(j)) { seen.add(j); stack.push(j); } }
+    return seen.size === N;
+  }
+  function newLayout() {
+    seed = (Math.random() * 2 ** 31) | 0;
+    let tries = 0;
+    do {
+      pos = Array.from({ length: N }, () => [rng() * AREA, rng() * AREA]);
+      buildEdges();
+    } while (!connected && ++tries < MAX_REDRAWS);
+    x0 = Array.from({ length: N }, () => rng() * 10);
+    gamma = new Array(N).fill(1);
+    sel = 0;
+  }
+
+  // ---------------------------------------------------------------- theory
+  // Eigenvalues of Lhat via the symmetric similar matrix S = W^-1/2 L W^-1/2 (Jacobi rotations).
+  function jacobiEigs(M) {
+    const n = M.length, a = M.map((r) => r.slice());
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += a[p][q] * a[p][q];
+      if (off < 1e-22) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(a[p][q]) < 1e-300) continue;
+        const th = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+        const t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+        const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        for (let r = 0; r < n; r++) {
+          const arp = a[r][p], arq = a[r][q];
+          a[r][p] = c * arp - s * arq; a[r][q] = s * arp + c * arq;
+        }
+        for (let r = 0; r < n; r++) {
+          const apr = a[p][r], aqr = a[q][r];
+          a[p][r] = c * apr - s * aqr; a[q][r] = s * apr + c * aqr;
+        }
+      }
+    }
+    return a.map((r, i) => r[i]).sort((u, v) => u - v);
+  }
+  function computeTheory() {
+    // w_i = gamma_i |N_i| ; alpha = sum w_i x_i(0) / sum w_i (only meaningful when connected)
+    const w = gamma.map((g, i) => g * deg[i]);
+    const sw = w.reduce((s, v) => s + v, 0);
+    alpha = connected && sw > 0 ? w.reduce((s, v, i) => s + v * x0[i], 0) / sw : NaN;
+    if (!connected || deg.some((d) => d === 0)) { spec = null; return; }
+    const L = A.map((row, i) => row.map((a, j) => (i === j ? row.reduce((s, v) => s + v, 0) : -a)));
+    const wis = w.map((v) => 1 / Math.sqrt(v));
+    const S = L.map((row, i) => row.map((v, j) => wis[i] * v * wis[j]));
+    const mu = jacobiEigs(S);
+    spec = { mu, mu2: mu[1], muN: mu[N - 1], tauMax: Math.PI / (2 * mu[N - 1]) };
+  }
+
+  // ---------------------------------------------------------------- simulation
+  function restart() {
+    hist = [x0.slice()]; times = [0]; dis = [disagreement(x0)];
+    k = 0; finished = false; tConv = null; diverged = false; acc = 0;
+    pulses = []; nextEmit = 0;
+    computeTheory();
+    running = true; ui.play.textContent = "Pause";
+  }
+  function disagreement(x) {
+    if (!isFinite(alpha)) return NaN;
+    return Math.sqrt(x.reduce((s, v) => s + (v - alpha) ** 2, 0));
+  }
+  // One forward-Euler step. Each drone i uses ONLY its own value, its own value tau ago, and the
+  // values its neighbours broadcast tau ago:
+  //   x_i <- x_i + dt/gamma_i * (1/|N_i|) * sum_j a_ij (x_j[k-d] - x_i[k-d])
+  function step() {
+    const d = Math.round(tau / dt);
+    const now = hist[k], sent = hist[Math.max(k - d, 0)];
+    const next = new Array(N);
+    for (let i = 0; i < N; i++) {
+      if (deg[i] === 0) { next[i] = now[i]; continue; }   // isolated drone holds its value
+      let u = 0;
+      for (const j of nbrs[i]) u += A[i][j] * (sent[j] - sent[i]);
+      next[i] = now[i] + (dt * (u / deg[i])) / gamma[i];
+    }
+    hist.push(next); k++; times.push(k * dt); dis.push(disagreement(next));
+    if (next.some((v) => !isFinite(v) || Math.abs(v) > 1e4)) { diverged = true; finished = true; }
+    if (isFinite(alpha) && tConv === null && next.every((v) => Math.abs(v - alpha) < 0.01 * Math.abs(alpha))) tConv = k * dt;
+    if (tConv !== null && next.some((v) => Math.abs(v - alpha) >= 0.01 * Math.abs(alpha))) tConv = null;
+    if (k * dt >= T_END - 1e-9) finished = true;
+  }
+  function emitPulses(t) {
+    // Visual only: every 0.5 s each drone broadcasts; a dot travels each link for tau seconds.
+    if (tau <= 0) return;
+    while (nextEmit <= t) {
+      for (let i = 0; i < N; i++) for (const j of nbrs[i]) pulses.push({ from: j, to: i, t0: nextEmit, val: valueAt(j, nextEmit) });
+      nextEmit += 0.5;
+    }
+    pulses = pulses.filter((p) => t - p.t0 < tau);
+  }
+  function valueAt(i, t) { const kk = Math.min(Math.round(t / dt), k); return hist[kk][i]; }
+
+  // ---------------------------------------------------------------- colours / theme
+  let C = {};
+  function readTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n) => cs.getPropertyValue(n).trim();
+    C = {
+      panel: g("--panel"), ink: g("--ink"), ink2: g("--ink-2"), ink3: g("--ink-3"), rule: g("--rule"), grid: g("--grid"),
+      series: ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6", "--s7", "--s8"].map(g),
+      seq: ["--seq0", "--seq1", "--seq2", "--seq3", "--seq4"].map(g),
+      mono: g("--f-mono"), body: g("--f-body"),
+    };
+  }
+  // Drones 0-7 get the 8 categorical hues; drones 8 and 9 reuse hues 1 and 2 with a dashed line.
+  const seriesColor = (i) => C.series[i % 8];
+  const seriesDash = (i) => (i >= 8 ? [6, 4] : []);
+  function hexToRgb(h) { const v = parseInt(h.replace("#", ""), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+  function seqColor(v) {               // value 0..10 -> sequential blue ramp
+    const tt = Math.max(0, Math.min(1, v / 10)) * (C.seq.length - 1);
+    const i = Math.min(Math.floor(tt), C.seq.length - 2), f = tt - i;
+    const a = hexToRgb(C.seq[i]), b = hexToRgb(C.seq[i + 1]);
+    const m = a.map((c, q) => Math.round(c + (b[q] - c) * f));
+    return `rgb(${m[0]},${m[1]},${m[2]})`;
+  }
+  function textOn(v) { // pick ink for a node label by luminance of its fill
+    const tt = Math.max(0, Math.min(1, v / 10));
+    const dark = document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    return (dark ? tt < 0.55 : tt > 0.45) ? "#ffffff" : "#0b1520";
+  }
+
+  // ---------------------------------------------------------------- canvas helpers
+  function fit(cv) {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w: r.width, h: r.height };
+  }
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo || 1, raw = span / n, mag = 10 ** Math.floor(Math.log10(raw));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
+    const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+
+  // ---------------------------------------------------------------- draw: graph
+  const gcv = $("graph"), scv = $("series"), dcv = $("dis");
+  let gGeom = null;
+  function drawGraph() {
+    const { ctx, w, h } = fit(gcv);
+    ctx.clearRect(0, 0, w, h);
+    const pad = 22, s = (Math.min(w, h) - 2 * pad) / AREA;
+    const X = (p) => pad + p[0] * s, Y = (p) => h - pad - p[1] * s;
+    gGeom = { X, Y, s };
+    // area frame + light grid every 20 m
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    for (let g = 0; g <= AREA; g += 20) {
+      ctx.beginPath(); ctx.moveTo(pad + g * s, pad); ctx.lineTo(pad + g * s, h - pad); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad, h - pad - g * s); ctx.lineTo(w - pad, h - pad - g * s); ctx.stroke();
+    }
+    ctx.fillStyle = C.ink3; ctx.font = `10px ${C.mono}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText("100 m × 100 m", pad + 2, h - pad + 6);
+
+    const x = hist[k];
+    // comms disks of radius r_c: every drone (faint) and the selected / hovered one (dark)
+    const focus = hoverNode >= 0 ? hoverNode : sel;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip(); ctx.setLineDash([4, 4]);
+    if (ui.disks.checked) {
+      ctx.strokeStyle = C.ink3; ctx.globalAlpha = 0.28; ctx.lineWidth = 1;
+      for (let i = 0; i < N; i++) if (i !== focus) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), rc * s, 0, 2 * Math.PI); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1; ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(X(pos[focus]), Y(pos[focus]), rc * s, 0, 2 * Math.PI); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = C.ink2; ctx.font = `10px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText(`r_c = ${rc} m`, X(pos[focus]), Math.max(12, Y(pos[focus]) - rc * s - 3));
+    ctx.restore();
+
+    // links, width proportional to a_ij
+    for (let i = 0; i < N; i++) for (const j of nbrs[i]) {
+      if (j < i) continue;
+      const hl = hoverNode === i || hoverNode === j;
+      ctx.strokeStyle = hl ? C.ink2 : C.ink3; ctx.globalAlpha = hl ? 0.9 : 0.45;
+      ctx.lineWidth = 0.6 + 4.2 * A[i][j]; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // messages in flight
+    const t = k * dt;
+    for (const p of pulses) {
+      const f = (t - p.t0) / tau; if (f < 0 || f > 1) continue;
+      const a = pos[p.from], b = pos[p.to];
+      const px = X(a) + (X(b) - X(a)) * f, py = Y(a) + (Y(b) - Y(a)) * f;
+      ctx.beginPath(); ctx.arc(px, py, 3.2, 0, 2 * Math.PI);
+      ctx.fillStyle = seqColor(p.val); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.panel; ctx.stroke();
+    }
+
+    // nodes: fill = current value
+    const R0 = Math.max(10, Math.min(15, 1.4 * s * 10));
+    for (let i = 0; i < N; i++) {
+      const R = R0 * Math.sqrt(gamma[i]) ** 0.8;      // node size grows with confidence gamma_i
+      const cx = X(pos[i]), cy = Y(pos[i]), v = isFinite(x[i]) ? x[i] : 0;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+      ctx.fillStyle = seqColor(v); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+      if (i === sel) { ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 1.6; ctx.strokeStyle = C.ink; ctx.stroke(); }
+      if (hoverNode === i || hoverSeries === i) { ctx.beginPath(); ctx.arc(cx, cy, R + 7, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = seriesColor(i); ctx.stroke(); }
+      ctx.fillStyle = textOn(v); ctx.font = `600 12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i), cx, cy + 0.5);
+    }
+    // value labels last, with a halo, so they stay readable over links and neighbouring nodes
+    ctx.font = `500 11px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.lineJoin = "round"; ctx.lineWidth = 3.5; ctx.strokeStyle = C.panel;
+    for (let i = 0; i < N; i++) {
+      const R = R0 * Math.sqrt(gamma[i]) ** 0.8, v = isFinite(x[i]) ? x[i] : 0;
+      const txt = Math.abs(v) < 1000 ? v.toFixed(2) : v.toExponential(1);
+      ctx.strokeText(txt, X(pos[i]), Y(pos[i]) + R + 3); ctx.fillStyle = C.ink; ctx.fillText(txt, X(pos[i]), Y(pos[i]) + R + 3);
+    }
+  }
+
+  // ---------------------------------------------------------------- draw: time series
+  let sGeom = null;
+  function drawSeries() {
+    const { ctx, w, h } = fit(scv);
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 40, r: 28, t: 8, b: 24 };
+    const tMax = Math.max(15, Math.ceil((k * dt) / 5) * 5);
+    let lo = 0, hi = 10;
+    for (let q = 0; q <= k; q += Math.max(1, Math.floor(k / 400))) for (const v of hist[q]) if (isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    for (const v of hist[k]) if (isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    const yt = niceTicks(lo, hi, 5); lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt[yt.length - 1]);
+    const X = (t) => m.l + (t / tMax) * (w - m.l - m.r), Y = (v) => h - m.b - ((v - lo) / (hi - lo)) * (h - m.t - m.b);
+    sGeom = { X, Y, m, tMax, w, h };
+    axes(ctx, w, h, m, niceTicks(0, tMax, 6), yt, X, Y, (v) => String(v), "t [s]");
+
+    // predicted alpha
+    if (isFinite(alpha)) {
+      ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(m.l, Y(alpha)); ctx.lineTo(w - m.r, Y(alpha)); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = C.ink; ctx.font = `11px ${C.mono}`; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+      ctx.fillText(`α = ${alpha.toFixed(3)}`, w - m.r - 4, Y(alpha) - 3);
+    }
+    // lines, decimated to ~ one point per pixel
+    const stride = Math.max(1, Math.floor(k / (w - m.l - m.r)));
+    ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, w - m.l - m.r, h - m.t - m.b); ctx.clip();
+    for (let i = 0; i < N; i++) {
+      const faded = hoverSeries >= 0 && hoverSeries !== i;
+      ctx.strokeStyle = seriesColor(i); ctx.globalAlpha = faded ? 0.2 : 1;
+      ctx.lineWidth = hoverSeries === i ? 3 : 2; ctx.setLineDash(seriesDash(i)); ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let q = 0; q <= k; q += stride) { const v = hist[q][i]; if (!isFinite(v)) break; q === 0 ? ctx.moveTo(X(times[q]), Y(v)) : ctx.lineTo(X(times[q]), Y(v)); }
+      if (isFinite(hist[k][i])) ctx.lineTo(X(times[k]), Y(hist[k][i]));
+      ctx.stroke();
+    }
+    ctx.restore(); ctx.globalAlpha = 1; ctx.setLineDash([]);
+    // direct labels: drone id at each line's current end, nudged apart vertically
+    const ends = [];
+    for (let i = 0; i < N; i++) if (isFinite(hist[k][i])) ends.push({ i, y: Y(hist[k][i]) });
+    ends.sort((a, b) => a.y - b.y);
+    for (let q = 1; q < ends.length; q++) if (ends[q].y - ends[q - 1].y < 11) ends[q].y = ends[q - 1].y + 11;
+    const xEnd = X(times[k]);
+    ctx.font = `600 10.5px ${C.body}`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    if (ends.length && ends[0].y - 11 * 0 < m.t) {}
+    for (const e of ends) { ctx.fillStyle = C.ink2; ctx.fillText(String(e.i), Math.min(xEnd + 5, w - m.r + 6), Math.max(m.t + 5, Math.min(h - m.b - 4, e.y))); }
+  }
+  function axes(ctx, w, h, m, xt, yt, X, Y, fmtY, xlabel) {
+    ctx.font = `10.5px ${C.mono}`; ctx.lineWidth = 1;
+    ctx.strokeStyle = C.grid; ctx.fillStyle = C.ink3;
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const v of yt) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke(); ctx.fillText(fmtY(v), m.l - 6, y); }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (const v of xt) { const x = Math.round(X(v)) + 0.5; if (x > w - m.r - 34) continue; ctx.fillText(String(v), x, h - m.b + 6); }
+    ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(m.l, h - m.b + 0.5); ctx.lineTo(w - m.r, h - m.b + 0.5); ctx.stroke();
+    ctx.textAlign = "right"; ctx.fillText(xlabel, w - m.r, h - m.b + 6 + 0);
+  }
+
+  // ---------------------------------------------------------------- draw: disagreement (log)
+  function drawDis() {
+    const { ctx, w, h } = fit(dcv);
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 40, r: 28, t: 8, b: 24 };
+    const tMax = Math.max(15, Math.ceil((k * dt) / 5) * 5);
+    const LO = -6, HI = 4;   // log10 range 1e-6 .. 1e4
+    const X = (t) => m.l + (t / tMax) * (w - m.l - m.r);
+    const Y = (lv) => h - m.b - ((lv - LO) / (HI - LO)) * (h - m.t - m.b);
+    axes(ctx, w, h, m, niceTicks(0, tMax, 6), [-6, -4, -2, 0, 2, 4], X, Y, (v) => (v === 0 ? "1" : `1e${v}`), "t [s]");
+    if (!isFinite(alpha)) {
+      ctx.fillStyle = C.ink3; ctx.font = `12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Graph is disconnected: no single consensus value", w / 2, h / 2); return;
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, w - m.l - m.r, h - m.t - m.b); ctx.clip();
+    if (spec && dis[0] > 0) {   // reference slope e^{-mu_2 t}
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink3; ctx.lineWidth = 1.2; ctx.beginPath();
+      ctx.moveTo(X(0), Y(Math.log10(dis[0]))); ctx.lineTo(X(tMax), Y(Math.log10(dis[0]) - (spec.mu2 * tMax) / Math.LN10)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    const stride = Math.max(1, Math.floor(k / (w - m.l - m.r)));
+    ctx.strokeStyle = C.series[0]; ctx.lineWidth = 2; ctx.beginPath();
+    for (let q = 0; q <= k; q += stride) { const v = Math.log10(Math.max(dis[q], 1e-12)); if (!isFinite(v)) break; q === 0 ? ctx.moveTo(X(times[q]), Y(v)) : ctx.lineTo(X(times[q]), Y(v)); }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // ---------------------------------------------------------------- readouts
+  const fmt = (v, d = 3) => (isFinite(v) ? v.toFixed(d) : "–");
+  function updateReadouts() {
+    const x = hist[k];
+    $("r-t").textContent = `${(k * dt).toFixed(1)} s`;
+    $("r-alpha").textContent = fmt(alpha);
+    $("r-avg").textContent = fmt(x0.reduce((s, v) => s + v, 0) / N);
+    const fin = x.filter(isFinite);
+    $("r-spread").textContent = fin.length === N ? (Math.max(...fin) - Math.min(...fin)).toExponential(2) : "∞";
+    $("r-mu2").textContent = spec ? spec.mu2.toFixed(3) : "–";
+    $("r-conv").textContent = tConv !== null ? `${tConv.toFixed(1)} s` : "–";
+    $("dt-hint").textContent = spec ? `Euler limit 2/μₙ = ${(2 / spec.muN).toFixed(2)} s` : "Euler limit 2/μₙ = –";
+    updateLive();
+    $("tau-hint").textContent = spec ? `bound τ_max = π/(2μₙ) = ${spec.tauMax.toFixed(2)} s` : "bound τ_max = – (graph disconnected)";
+    const st = $("status");
+    if (!connected) { st.className = "pill warn"; st.textContent = "Disconnected: groups agree separately"; }
+    else if (spec && dt >= 2 / spec.muN && !(tau >= spec.tauMax)) { st.className = "pill bad"; st.textContent = "Unstable: dt too big for Euler"; }
+    else if (diverged) { st.className = "pill bad"; st.textContent = "Diverged: delay above bound"; }
+    else if (spec && tau >= spec.tauMax) { st.className = "pill bad"; st.textContent = "Unstable: τ ≥ τ_max, oscillates"; }
+    else if (tConv !== null) { st.className = "pill good"; st.textContent = "Agreed within 1%"; }
+    else { st.className = "pill good"; st.textContent = "Converging"; }
+  }
+
+  // Term-by-term view of the equation for the selected (or hovered) drone, at the current time.
+  function updateLive() {
+    const i = hoverNode >= 0 ? hoverNode : sel;
+    const d = Math.round(tau / dt), sent = hist[Math.max(k - d, 0)];
+    $("live-title").textContent = `Drone ${i} right now (t = ${(k * dt).toFixed(1)} s)`;
+    let sum = 0, rows = "";
+    for (const j of nbrs[i]) {
+      const dij = Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]);
+      const diff = sent[j] - sent[i], term = A[i][j] * diff; sum += term;
+      rows += `<tr><td>${j}</td><td>${dij.toFixed(1)}</td><td>${A[i][j].toFixed(3)}</td><td>${fmt(diff)}</td><td>${fmt(term)}</td></tr>`;
+    }
+    $("live-body").innerHTML = rows || `<tr><td colspan="5">no neighbours: drone ${i} holds its value</td></tr>`;
+    const xdot = deg[i] ? sum / deg[i] / gamma[i] : 0;
+    $("live-foot").innerHTML = `<tr><td colspan="4">Σ / |N<sub>i</sub>| = ${fmt(sum)} / ${deg[i]}, then ÷ γ<sub>i</sub> = ${gamma[i]}</td><td>ẋ = ${fmt(xdot)}</td></tr>`;
+  }
+
+  // ---------------------------------------------------------------- loop
+  let last = performance.now();
+  function frame(now) {
+    const realDt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (running && !finished) {
+      acc += SPEEDS[speedIdx] * realDt;
+      let n = 0;
+      while (acc >= dt && !finished && n++ < 5000) { step(); acc -= dt; }
+      emitPulses(k * dt);
+      if (finished) { running = false; ui.play.textContent = "Play"; }
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+  function render() { drawGraph(); drawSeries(); drawDis(); updateReadouts(); }
+
+  // ---------------------------------------------------------------- interaction
+  function syncLabels() {
+    $("n-out").textContent = N; $("rc-out").textContent = `${rc} m`;
+    $("tau-out").textContent = `${tau.toFixed(2)} s`; $("speed-out").textContent = `${SPEEDS[speedIdx]}×`;
+    $("sigma-out").textContent = `${sigma} m`; $("dt-out").textContent = `${dt < 0.01 ? dt.toFixed(4) : dt.toFixed(3)} s`;
+    $("gam-id").textContent = sel; $("gam-out").textContent = gamma[sel].toFixed(1); ui.gam.value = gamma[sel];
+  }
+  ui.n.addEventListener("input", () => { N = +ui.n.value; newLayout(); syncLabels(); restart(); $("drone-count").textContent = N; });
+  ui.rc.addEventListener("input", () => { rc = +ui.rc.value; syncLabels(); buildEdges(); restart(); });
+  ui.tau.addEventListener("input", () => { tau = +ui.tau.value; syncLabels(); restart(); });
+  ui.speed.addEventListener("input", () => { speedIdx = +ui.speed.value; syncLabels(); });
+  ui.sigma.addEventListener("input", () => { sigma = +ui.sigma.value; buildEdges(); syncLabels(); restart(); });
+  ui.gam.addEventListener("input", () => { gamma[sel] = +ui.gam.value; syncLabels(); restart(); });
+  ui.dt.addEventListener("input", () => { dt = DTS[+ui.dt.value]; syncLabels(); restart(); });
+  ui.play.addEventListener("click", () => {
+    if (finished) restart(); else { running = !running; ui.play.textContent = running ? "Pause" : "Play"; }
+  });
+  ui.restart.addEventListener("click", restart);
+  ui.shuffle.addEventListener("click", () => { newLayout(); restart(); });
+
+  function nodeAt(ev) {
+    if (!gGeom) return -1;
+    const r = gcv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    let best = -1, bd = 22;
+    for (let i = 0; i < N; i++) { const d = Math.hypot(gGeom.X(pos[i]) - mx, gGeom.Y(pos[i]) - my); if (d < bd) { bd = d; best = i; } }
+    return best;
+  }
+  const gtip = $("gtip"), stip = $("stip");
+  gcv.addEventListener("pointermove", (ev) => {
+    hoverNode = nodeAt(ev); hoverSeries = hoverNode;
+    if (hoverNode < 0) { gtip.hidden = true; return; }
+    const i = hoverNode, card = gcv.parentElement.getBoundingClientRect();
+    gtip.innerHTML = `<div><b>Drone ${i}</b></div><div>x = ${fmt(hist[k][i])}</div><div>x(0) = ${fmt(x0[i])}</div><div>|N| = ${deg[i]}, γ = ${gamma[i]}</div><div>w = γ|N| = ${gamma[i] * deg[i]}</div>`;
+    gtip.hidden = false;
+    gtip.style.left = `${Math.min(ev.clientX - card.left + 14, card.width - 130)}px`; gtip.style.top = `${ev.clientY - card.top + 10}px`;
+  });
+  gcv.addEventListener("pointerleave", () => { hoverNode = -1; hoverSeries = -1; gtip.hidden = true; });
+  gcv.addEventListener("click", (ev) => {
+    const i = nodeAt(ev); if (i < 0) return;
+    sel = i; syncLabels();
+  });
+
+  scv.addEventListener("pointermove", (ev) => {
+    if (!sGeom) return;
+    const r = scv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    const { m, w, tMax } = sGeom;
+    if (mx < m.l || mx > w - m.r) { stip.hidden = true; hoverSeries = -1; return; }
+    const t = ((mx - m.l) / (w - m.l - m.r)) * tMax;
+    if (t > k * dt) { stip.hidden = true; hoverSeries = -1; return; }
+    const q = Math.min(k, Math.round(t / dt)), xs = hist[q];
+    // nearest line to the pointer becomes highlighted
+    let best = -1, bd = 14;
+    for (let i = 0; i < N; i++) { const d = Math.abs(sGeom.Y(xs[i]) - my); if (d < bd) { bd = d; best = i; } }
+    hoverSeries = best;
+    const rows = xs.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v)
+      .map(({ v, i }) => `<div class="row"><i style="background:${seriesColor(i)}"></i>${i}: ${fmt(v)}${i === best ? " ◂" : ""}</div>`).join("");
+    stip.innerHTML = `<div><b>t = ${(q * dt).toFixed(2)} s</b></div>${rows}`;
+    const card = scv.parentElement.getBoundingClientRect();
+    stip.hidden = false;
+    stip.style.left = `${Math.min(ev.clientX - card.left + 14, card.width - 120)}px`; stip.style.top = `${Math.max(4, ev.clientY - card.top - 40)}px`;
+  });
+  scv.addEventListener("pointerleave", () => { stip.hidden = true; hoverSeries = -1; });
+
+  // theme changes: re-read tokens
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
+  new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ---------------------------------------------------------------- boot
+  readTheme(); newLayout(); syncLabels(); restart();
+  if (reduceMotion) speedIdx = 5, ui.speed.value = 5, syncLabels();   // finish quickly instead of animating slowly
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(readTheme);
+  requestAnimationFrame(frame);
+})();
+</script>
