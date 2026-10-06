@@ -19,7 +19,8 @@
   --warn: #9a6400;
   --cam: #2a78d6; --thr: #eb6834; --lid: #1baf7a;   /* drone types: categorical slots 1-3 */
   --pos: #2a78d6; --neg: #e34948;
-  --task-bg: #e6eefa; --task-edge: #9dbde8; --backup-bg: #f1f2f4; --out-bg: #fbeceb;
+  --task-bg: #e6eefa; --task-edge: #9dbde8; --task2-bg: #efeafb; --task2-edge: #b6a9ea; --backup-bg: #f1f2f4; --out-bg: #fbeceb;
+  --backup-fill: #b9bfc6; --backup-text: #1d2227;
   --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -29,7 +30,8 @@
     --bg: #111417; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
     --rule: #2d333a; --grid: #232930; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
     --cam: #3987e5; --thr: #d95926; --lid: #199e70; --pos: #3987e5; --neg: #e66767;
-    --task-bg: #1b2838; --task-edge: #2f5a8c; --backup-bg: #20252a; --out-bg: #2e1d1d;
+    --task-bg: #1b2838; --task-edge: #2f5a8c; --task2-bg: #251f3b; --task2-edge: #5b4fa6; --backup-bg: #20252a; --out-bg: #2e1d1d;
+    --backup-fill: #5d656e; --backup-text: #f2f4f6;
     color-scheme: dark;
   }
 }
@@ -37,7 +39,8 @@
   --bg: #111417; --panel: #1a1e22; --ink: #eef1f4; --ink-2: #b4bcc5; --ink-3: #87909a;
   --rule: #2d333a; --grid: #232930; --accent: #3987e5; --good: #4cc488; --bad: #f07067; --warn: #e0a640;
   --cam: #3987e5; --thr: #d95926; --lid: #199e70; --pos: #3987e5; --neg: #e66767;
-  --task-bg: #1b2838; --task-edge: #2f5a8c; --backup-bg: #20252a; --out-bg: #2e1d1d;
+  --task-bg: #1b2838; --task-edge: #2f5a8c; --task2-bg: #251f3b; --task2-edge: #5b4fa6; --backup-bg: #20252a; --out-bg: #2e1d1d;
+  --backup-fill: #5d656e; --backup-text: #f2f4f6;
   color-scheme: dark;
 }
 
@@ -105,21 +108,25 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
 .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; list-style: none; margin: 0; padding: 0; font-size: 0.76rem; color: var(--ink-2); }
 .keys li { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
-.sw.ring { border: 2px dashed var(--ink-2); }
+.sw.ring { background: var(--backup-fill); border: 2px solid var(--ink-3); }
 .sw.keep { border: 1.5px solid var(--ink-3); }
 .sw.lost { border: 2px solid var(--bad); }
 .sw.task { border-radius: 3px; background: var(--task-bg); border: 1.5px solid var(--task-edge); }
-.sw.line { border-radius: 0; height: 0; width: 16px; border-top: 2px solid var(--ink-3); }
+.sw.task2 { border-radius: 3px; background: var(--task2-bg); border: 1.5px solid var(--task2-edge); }
+.sw.line { border-radius: 0; height: 0; width: 16px; border-top: 2px solid var(--ink-3); position: relative; }
+.sw.line::after { content: ""; position: absolute; right: -2px; top: -5px; border: 4px solid transparent; border-left: 6px solid var(--ink-3); }
 .sw.dash { border-radius: 0; height: 0; width: 16px; border-top: 2px dotted var(--bad); }
 
 .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; padding: 6px 8px; font: 0.75rem var(--f-mono); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,0.12); white-space: pre; z-index: 2; font-variant-numeric: tabular-nums; }
 .tip .row { display: flex; gap: 8px; align-items: center; }
 .tip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
 
-.boxes { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.boxes { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 8px; }
+@media (max-width: 900px) { .boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 @media (max-width: 640px) { .boxes { grid-template-columns: minmax(0, 1fr); } }
 .box { border-radius: 6px; padding: 7px 9px 9px; display: grid; gap: 6px; align-content: start; border: 1px dashed var(--rule); min-height: 78px; min-width: 0; }
 .box.task { background: var(--task-bg); border: 1.5px solid var(--task-edge); }
+.box.task2 { background: var(--task2-bg); border: 1.5px solid var(--task2-edge); }
 .box.backup { background: var(--backup-bg); }
 .box.out { background: var(--out-bg); }
 .box-title { display: flex; justify-content: space-between; gap: 8px; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
@@ -129,8 +136,8 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
 .slot small { font: 0.66rem var(--f-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 0.76rem var(--f-body); padding: 0; cursor: pointer; border: 0; position: relative; color: #fff; }
 .dot.camera { background: var(--cam); } .dot.thermal { background: var(--thr); color: #1a0d05; } .dot.lidar { background: var(--lid); color: #04150e; }
-.dot.backup::before, .dot.commslost::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
-.dot.backup::before { border: 2px dashed var(--ink-2); }
+.dot.commslost::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+.dot.backup { background: var(--backup-fill); color: var(--backup-text); box-shadow: inset 0 0 0 3px var(--ring); }
 .dot.commslost::before { border: 2px solid var(--bad); }
 .dot.malfunction { opacity: 0.5; }
 .dot.malfunction::after { content: "×"; position: absolute; inset: -6px; display: grid; place-items: center; font: 600 1.7rem/1 var(--f-body); color: var(--bad); }
@@ -145,6 +152,8 @@ canvas { width: 100%; display: block; touch-action: manipulation; }
 .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 0.15em; }
 .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 0.15em; }
 .big { font-size: 1.5em; vertical-align: -0.12em; }
+.terms { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+.terms b { font-family: var(--f-mono); font-weight: 500; color: var(--ink); }
 .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .rules li { border: 1px solid var(--rule); border-radius: 6px; padding: 6px 9px; font-size: 0.8rem; color: var(--ink-2); display: grid; gap: 1px; }
 .rules li b { color: var(--ink); font-weight: 600; font-size: 0.82rem; }
@@ -203,7 +212,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
           <div class="hint">camera, thermal, lidar</div></div>
         <div class="ctl"><label for="dmin"><span>Min separation d<sub>min</sub></span> <output id="dmin-out">8 m</output></label>
           <input id="dmin" type="range" min="0" max="25" step="1" value="8">
-          <div class="hint">no other drone may enter this circle; New layout respects it</div></div>
+          <div class="hint">each drone has a circle of radius d<sub>min</sub>/2; circles may not overlap</div></div>
       </fieldset>
 
       <fieldset class="group">
@@ -214,12 +223,15 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
         <div class="ctl"><label for="sigma"><span>Distance falloff σ</span> <output id="sigma-out">40 m</output></label>
           <input id="sigma" type="range" min="5" max="150" step="1" value="40">
           <div class="hint">farther drones count less: e<sup>−d²/σ²</sup></div></div>
+        <div class="ctl"><label for="cap"><span>Link capacity K per drone</span> <output id="cap-out">10</output></label>
+          <input id="cap" type="range" min="1" max="10" step="1" value="10">
+          <div class="hint">each drone keeps at most K links, to its closest drones</div></div>
         <div class="ctl"><label for="tau"><span>Delay τ</span> <output id="tau-out">0.00 s</output></label>
           <input id="tau" type="range" min="0" max="3" step="0.05" value="0">
           <div class="hint" id="tau-hint">stable if τ &lt; τ_max</div></div>
         <div class="ctl"><label for="loss"><span>Packet loss</span> <output id="loss-out">0 %</output></label>
           <input id="loss" type="range" min="0" max="0.9" step="0.05" value="0">
-          <div class="hint">each link drops for 0.5 s at a time with this chance</div></div>
+          <div class="hint">share of time a link is down; outages start and end at random times (mean 1 s)</div></div>
         <div class="ctl"><label for="T"><span>Info fades with age, T</span> <output id="T-out">off</output></label>
           <input id="T" type="range" min="0" max="12" step="1" value="12">
           <div class="hint">older info counts less: × e<sup>−age/T</sup></div></div>
@@ -251,9 +263,10 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
 
       <fieldset class="group">
         <legend>Simulation</legend>
-        <div class="ctl"><label for="dt"><span>Euler step dt</span> <output id="dt-out">0.010 s</output></label>
+        <div class="ctl"><label for="dt"><span>Solver step dt</span> <output id="dt-out">0.010 s</output></label>
           <input id="dt" type="range" min="0" max="20" step="1" value="4">
-          <div class="hint" id="dt-hint">stable if dt &lt; 2/μₙ</div></div>
+          <div class="hint" id="dt-hint">stable if dt &lt; 2/μₙ</div>
+          <div class="hint">the model is continuous in time; dt is only the numerical step</div></div>
         <div class="ctl"><label for="speed"><span>Playback</span> <output id="speed-out">2×</output></label>
           <input id="speed" type="range" min="0" max="5" step="1" value="2">
           <div class="hint">simulated seconds per real second</div></div>
@@ -271,6 +284,8 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
         <div class="ro"><span>Connected now</span><b id="r-conn">–</b></div>
         <div class="ro"><span>Jointly connected, last 5 s</span><b id="r-joint">–</b></div>
         <div class="ro"><span>Closest pair</span><b id="r-close">–</b></div>
+        <div class="ro"><span>Balanced (in = out)</span><b id="r-bal">–</b></div>
+        <div class="ro"><span>Most links on a drone</span><b id="r-cap">–</b></div>
         <div class="ro"><span>Within 1% at</span><b id="r-conv">–</b></div>
         <span class="pill good" id="status">Converging</span>
       </section>
@@ -284,21 +299,23 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
             <li><span class="sw" style="background:var(--thr)"></span>thermal</li>
             <li><span class="sw" style="background:var(--lid)"></span>lidar</li>
             <li><span class="sw task"></span>Task 1</li>
-            <li><span class="sw ring"></span>backup</li>
+            <li><span class="sw task2"></span>Task 2</li>
+            <li><span class="sw ring"></span>backup (grey, ring = sensor)</li>
             <li><span class="sw lost"></span>comms lost</li>
-            <li><span class="sw keep"></span>d<sub>min</sub> circle</li>
-            <li><span class="sw line"></span>link up</li>
+            <li><span class="sw keep"></span>d<sub>min</sub>/2 safety circle</li>
+            <li><span class="sw line"></span>directed link (one per direction)</li>
             <li><span class="sw dash"></span>link dropped</li>
           </ul>
-          <p class="note">Number inside = drone id, number below = its current value x<sub>i</sub>. Thicker links weigh more. Dots on links are messages in flight when τ &gt; 0. Bigger drones have a higher information weight γ. A red × is a drone that malfunctioned.</p>
+          <p class="note">Number inside = drone id, number below = its current value x<sub>i</sub>. Every link is a pair of arrows, one per direction, with equal weight (a balanced digraph); thicker arrows weigh more. Dots stream along each arrow: information leaving the sender and arriving τ seconds later (with τ = 0 the dots only show the direction). Bigger drones have a higher information weight γ. A red × is a drone that malfunctioned.</p>
           <div class="tip" id="gtip" hidden></div>
         </section>
 
         <div class="col">
           <section class="panel card" aria-label="Fleet status">
-            <h2><span>Fleet status</span> <small>colour = sensor type · box = role</small></h2>
+            <h2><span>Fleet status</span> <small>colour = sensor type (grey = backup) · box = role · all drones share one estimate x</small></h2>
             <div class="boxes">
-              <div class="box task"><div class="box-title">Task 1 · shared estimate <span id="c-task">0</span></div><div class="dots" id="dots-task"></div></div>
+              <div class="box task"><div class="box-title">Task 1 <span id="c-task">0</span></div><div class="dots" id="dots-task"></div></div>
+              <div class="box task2"><div class="box-title">Task 2 <span id="c-task2">0</span></div><div class="dots" id="dots-task2"></div></div>
               <div class="box backup"><div class="box-title">Backups <span id="c-backup">0</span></div><div class="dots" id="dots-backup"></div></div>
               <div class="box out"><div class="box-title">Out of service <span id="c-out">0</span></div><div class="dots" id="dots-out"></div></div>
             </div>
@@ -320,25 +337,34 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
         <section class="panel card" aria-label="Consensus equation">
           <h2><span>The rule every drone runs</span> <small>same rule, local info only</small></h2>
           <div class="formula">
-            <i>γ</i><sub><i>i</i></sub>&thinsp;<i>ẋ</i><sub><i>i</i></sub> =
+            <i>γ</i><sub><i>i</i></sub>&thinsp;<i>ẋ</i><sub><i>i</i></sub>(<i>t</i>) =
             <span class="frac"><span>1</span><span>|<i>N</i><sub><i>i</i></sub>|</span></span>
             <span class="big">Σ</span><sub><i>j</i>∈<i>N</i><sub><i>i</i></sub></sub>
-            <i>ã</i><sub><i>ij</i></sub> [ <i>x</i><sub><i>j</i></sub>(<i>t</i><sub><i>ij</i></sub>) − <i>x</i><sub><i>i</i></sub>(<i>t</i><sub><i>ij</i></sub>) ]
+            <i>ã</i><sub><i>ij</i></sub>(<i>t</i>) [ <i>x</i><sub><i>j</i></sub>(<i>t</i> − <i>τ</i><sub><i>ij</i></sub>) − <i>x</i><sub><i>i</i></sub>(<i>t</i> − <i>τ</i><sub><i>ij</i></sub>) ]
           </div>
           <div class="formula sm">
-            <i>ã</i><sub><i>ij</i></sub> = <i>a</i><sub><i>ij</i></sub>&thinsp;e<sup>−age<sub><i>ij</i></sub>/<i>T</i></sup>,&ensp;
-            <i>a</i><sub><i>ij</i></sub> = e<sup>−<i>d</i><sub><i>ij</i></sub>²/<i>σ</i>²</sup> if <i>d</i><sub><i>ij</i></sub> ≤ <i>r</i><sub>c</sub>,&ensp;
-            <i>t</i><sub><i>ij</i></sub> = send time of <i>j</i>'s last message
+            <i>ã</i><sub><i>ij</i></sub> = <i>a</i><sub><i>ij</i></sub>&thinsp;e<sup>−<i>τ</i><sub><i>ij</i></sub>/<i>T</i></sup>,&ensp;
+            <i>a</i><sub><i>ij</i></sub> = e<sup>−<i>d</i><sub><i>ij</i></sub>²/<i>σ</i>²</sup> if <i>d</i><sub><i>ij</i></sub> ≤ <i>r</i><sub>c</sub>, else 0,&ensp;
+            <i>τ</i><sub><i>ij</i></sub>(<i>t</i>) = age of the newest info from <i>j</i>
           </div>
-          <ul class="rules">
-            <li><b>Farther ↓ weight</b><span>distance d, falloff σ: <code>e^(−d²/σ²)</code></span></li>
-            <li><b>Older info ↓ weight</b><span>age of the message, T: <code>× e^(−age/T)</code></span></li>
-            <li><b>More info ↑ weight</b><span>γ<sub>i</sub>: the drone moves less, so α moves toward it</span></li>
-            <li><b>Shared value</b><span><code>α = Σ w<sub>i</sub>x<sub>i</sub> / Σ w<sub>i</sub></code>, w<sub>i</sub> = γ<sub>i</sub>|N<sub>i</sub>|</span></li>
+          <div class="formula sm">
+            <i>α</i> = Σ<i>w</i><sub><i>i</i></sub><i>x</i><sub><i>i</i></sub>(0) / Σ<i>w</i><sub><i>i</i></sub>, &nbsp;<i>w</i><sub><i>i</i></sub> = <i>γ</i><sub><i>i</i></sub>|<i>N</i><sub><i>i</i></sub>|
+            &emsp;·&emsp; stable iff <i>τ</i> &lt; π/(2<i>μ</i><sub><i>n</i></sub>)
+          </div>
+          <ul class="terms">
+            <li><b>x<sub>i</sub></b> drone i's value</li>
+            <li><b>N<sub>i</sub></b> drones within r<sub>c</sub> (at most K)</li>
+            <li><b>a<sub>ij</sub></b> link weight, closer = stronger</li>
+            <li><b>ã<sub>ij</sub></b> weight after ageing, older = weaker</li>
+            <li><b>γ<sub>i</sub></b> information weight, more info = higher, moves less</li>
+            <li><b>τ</b> message delay</li>
+            <li><b>τ<sub>ij</sub></b> age of j's newest info (= τ while the link is up)</li>
+            <li><b>T</b> how fast old info fades</li>
+            <li><b>μ<sub>2</sub>, μ<sub>n</sub></b> slowest / fastest mode of L̂</li>
           </ul>
           <h2 style="margin-top:6px"><span id="live-title">Drone 0 right now</span> <small>one row per neighbour</small></h2>
           <div class="tbl"><table class="live">
-            <thead><tr><th>from j</th><th>d [m]</th><th>a<sub>ij</sub></th><th>age [s]</th><th>e<sup>−age/T</sup></th><th>ã<sub>ij</sub></th><th>x<sub>j</sub>−x<sub>i</sub></th><th>ã·diff</th></tr></thead>
+            <thead><tr><th>from j</th><th>d [m]</th><th>a<sub>ij</sub></th><th>τ<sub>ij</sub> [s]</th><th>e<sup>−τ<sub>ij</sub>/T</sup></th><th>ã<sub>ij</sub></th><th>x<sub>j</sub>−x<sub>i</sub></th><th>ã·diff</th></tr></thead>
             <tbody id="live-body"></tbody>
             <tfoot id="live-foot"></tfoot>
           </table></div>
@@ -351,13 +377,13 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
             <div class="mat"><h3>D · degree <small>Σ<sub>j</sub> ã<sub>ij</sub> on the diagonal</small></h3><div class="tbl" id="mat-D"></div></div>
             <div class="mat"><h3>L = D − A · Laplacian <small>every row sums to 0</small></h3><div class="tbl" id="mat-L"></div></div>
           </div>
-          <p class="note">Blue = positive, red = negative; a stronger shade is a bigger number. A red struck-through entry is a link that is in range but dropped right now. Each drone's update is row i of L applied to the values it received, divided by γ<sub>i</sub>|N<sub>i</sub>|. The speed μ₂ and the delay bound τ_max are eigenvalues of that normalised matrix.</p>
+          <p class="note">The graph is a balanced digraph: A holds both directions, a<sub>ij</sub> = a<sub>ji</sub>, so each drone's incoming weight (column sum) equals its outgoing weight (row sum). Blue = positive, red = negative; a stronger shade is a bigger number. A red struck-through entry is a link that is in range but dropped right now. Each drone's update is row i of L applied to the values it received, divided by γ<sub>i</sub>|N<sub>i</sub>|. The speed μ₂ and the delay bound τ_max are eigenvalues of that normalised matrix.</p>
         </section>
       </div>
 
       <section class="panel card" aria-label="Comms transcript">
         <div class="tx-head">
-          <h2><span>Comms transcript</span> <small>broadcasts every 0.5 s · newest first</small></h2>
+          <h2><span>Comms transcript</span> <small>messages stream continuously · sampled every 0.5 s · newest first</small></h2>
           <label class="check" for="txsel"><input id="txsel" type="checkbox" checked> Only messages involving the selected drone</label>
         </div>
         <div class="transcript" id="tx"></div>
@@ -370,7 +396,8 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
 (() => {
   "use strict";
   // ================================================================ parameters
-  const AREA = 100, T_END = 60, MAX_REDRAWS = 4000, TICK = 0.5, JOINT_WIN = 5, TAKEOVER_DELAY = 2;
+  const AREA = 100, VIEW_PAD = 14, T_END = 60, MAX_REDRAWS = 4000, LOG_EVERY = 0.5, JOINT_WIN = 5, TAKEOVER_DELAY = 2;
+  const MEAN_OUTAGE = 1.0, VISUAL_TRAVEL = 0.9;   // [s] mean link outage; dot travel time when tau = 0
   const DTS = [0.001, 0.002, 0.005, 0.0075, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
   const TS = [1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60, 90, Infinity];
   const SPEEDS = [0.5, 1, 2, 4, 8, 16];
@@ -378,7 +405,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (id) => document.getElementById(id);
   const ui = {};
-  ["n", "ntypes", "dmin", "rc", "sigma", "tau", "loss", "T", "gam", "tfail", "takeover", "failsel", "dt", "speed", "disks", "union", "play", "restart", "shuffle", "txsel"].forEach((id) => (ui[id] = $(id)));
+  ["n", "ntypes", "dmin", "rc", "sigma", "cap", "tau", "loss", "T", "gam", "tfail", "takeover", "failsel", "dt", "speed", "disks", "union", "play", "restart", "shuffle", "txsel"].forEach((id) => (ui[id] = $(id)));
 
   function makeRng(seed) {   // mulberry32: reproducible layouts and packet-loss draws
     return () => {
@@ -391,7 +418,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   let layoutSeed = 1, rng = makeRng(1), lossRng = makeRng(2);
 
   // ================================================================ state
-  let N = 8, nTypes = 3, dmin = 8, rc = 40, sigma = 40, tau = 0, loss = 0, Tage = Infinity, dt = 0.01, speedIdx = 2;
+  let N = 8, nTypes = 3, dmin = 8, rc = 40, sigma = 40, cap = 10, tau = 0, loss = 0, Tage = Infinity, dt = 0.01, speedIdx = 2;
   let sel = 0, acc = 0;
   let pos = [], x0 = [], gamma = [], type = [], role0 = [], role = [], health = [];
   // One record per undirected link. Both directions share up/down state and the send time of the
@@ -402,7 +429,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   let hist = [], times = [], dis = [];
   let k = 0, running = true, finished = false, tConv = null, diverged = false, nextTick = 0;
   let failMode = "malfunction", tFail = 10, failDrone = 0, failed = false, promoted = false;
-  let events = [], ref = { t: 0, e: NaN }, pulses = [], tx = [];
+  let events = [], ref = { t: 0, e: NaN }, tx = [];
   let hoverNode = -1, hoverSeries = -1;
   let matDirty = true, txDirty = true, lastMat = 0;
 
@@ -417,10 +444,13 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     const old = new Map(links.map((l) => [`${l.i}-${l.j}`, l]));
     links = []; linkAt = Array.from({ length: N }, () => new Array(N).fill(-1));
     nbrs = Array.from({ length: N }, () => []);
+    // capacity: each drone keeps at most `cap` links, to its closest drones in range. A link exists only
+    // if both ends keep it, so a_ij = a_ji and the digraph stays balanced.
+    const keep = [...Array(N).keys()].map((i) => new Set(!ok(i) ? [] :
+      [...Array(N).keys()].filter((j) => j !== i && ok(j) && dist(i, j) <= rc).sort((p, q) => dist(i, p) - dist(i, q)).slice(0, cap)));
     for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
-      if (!ok(i) || !ok(j)) continue;                    // failed drones have no links
+      if (!keep[i].has(j) || !keep[j].has(i)) continue;   // in range (d_ij <= r_c) and within both capacities
       const d = dist(i, j);
-      if (d > rc) continue;                              // link iff d_ij <= r_c
       const p = old.get(`${i}-${j}`);
       linkAt[i][j] = linkAt[j][i] = links.length;
       links.push({ i, j, a: Math.exp(-(d * d) / (sigma * sigma)), up: p ? p.up : true, tSent: p ? p.tSent : 0, lastUp: p ? p.lastUp : 0 });
@@ -452,11 +482,32 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     gamma = new Array(N).fill(1);
     const perm = [...Array(N).keys()].sort(() => rng() - 0.5);
     type = new Array(N); perm.forEach((i, q) => (type[i] = TYPES[q % nTypes]));
-    const order = [...Array(N).keys()].sort(() => rng() - 0.5);   // floor(N/3) backups, rest on Task 1
-    role0 = new Array(N).fill("active"); order.slice(0, Math.floor(N / 3)).forEach((i) => (role0[i] = "backup"));
-    const actives = [...Array(N).keys()].filter((i) => role0[i] === "active");
+    const order = [...Array(N).keys()].sort(() => rng() - 0.5);   // floor(N/3) backups
+    role0 = new Array(N).fill("task1"); order.slice(0, Math.floor(N / 3)).forEach((i) => (role0[i] = "backup"));
+    // Task 2 (concept): one linked pair of non-backup drones, if at least one drone is left for Task 1
+    const free = [...Array(N).keys()].filter((i) => role0[i] === "task1");
+    if (free.length >= 3) {
+      const pairs = links.filter((l) => free.includes(l.i) && free.includes(l.j));
+      if (pairs.length) { const pr = pairs[Math.floor(rng() * pairs.length)]; role0[pr.i] = role0[pr.j] = "task2"; }
+    }
+    const actives = [...Array(N).keys()].filter((i) => role0[i] === "task1");
     failDrone = actives[Math.floor(rng() * actives.length)];
     sel = 0;
+  }
+  // Push overlapping drones apart until every pair is at least d_min apart (circles of radius d_min/2 touch at most).
+  function separate() {
+    for (let it = 0; it < 400; it++) {
+      let moved = false;
+      for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+        const d = dist(i, j);
+        if (d >= dmin) continue;
+        const ux = d > 1e-9 ? (pos[j][0] - pos[i][0]) / d : 1, uy = d > 1e-9 ? (pos[j][1] - pos[i][1]) / d : 0, push = (dmin - d) / 2 + 1e-3;
+        pos[i] = [pos[i][0] - ux * push, pos[i][1] - uy * push]; pos[j] = [pos[j][0] + ux * push, pos[j][1] + uy * push];
+        for (const q of [i, j]) pos[q] = [Math.min(AREA, Math.max(0, pos[q][0])), Math.min(AREA, Math.max(0, pos[q][1]))];
+        moved = true;
+      }
+      if (!moved) break;
+    }
   }
   function closestPair() {
     let best = { d: Infinity, i: -1, j: -1 };
@@ -513,7 +564,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     computeTheory(x0);
     hist = [x0.slice()]; times = [0]; dis = [disagreement(x0)];
     k = 0; finished = false; tConv = null; diverged = false; acc = 0; nextTick = 0;
-    pulses = []; ref = { t: 0, e: dis[0] };
+    ref = { t: 0, e: dis[0] };
     running = true; ui.play.textContent = "Pause";
     commsTick(0);
     buildFleet(); renderTranscript(); renderMatrices();
@@ -528,7 +579,15 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   //   x_i <- x_i + dt / (gamma_i |N_i|) * sum_j ã_ij ( x_j(t_ij) - x_i(t_ij) )
   function step() {
     const t = k * dt, now = hist[k], next = new Array(N);
-    for (const l of links) if (l.up) l.tSent = Math.max(0, t - tau);   // the message sent tau ago arrives
+    // Continuous-time on/off link process: outages start at rate lam_d and end at rate lam_u = 1/MEAN_OUTAGE,
+    // so a link is down a fraction `loss` of the time. While up, messages stream continuously and the
+    // newest one to arrive was sent tau ago; while down, the last value received keeps ageing.
+    const lamU = 1 / MEAN_OUTAGE, lamD = loss > 0 ? (lamU * loss) / (1 - loss) : 0;
+    for (const l of links) {
+      if (l.up && lossRng() < lamD * dt) l.up = false;
+      else if (!l.up && lossRng() < lamU * dt) l.up = true;
+      if (l.up) { l.tSent = Math.max(0, t - tau); l.lastUp = t; }
+    }
     for (let i = 0; i < N; i++) {
       if (health[i] === "malfunction") { next[i] = NaN; continue; }   // drone is down
       if (deg[i] === 0) { next[i] = now[i]; continue; }                // nothing to hear: hold value
@@ -552,27 +611,22 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     if (tn >= T_END - 1e-9) finished = true;
   }
 
-  // Every TICK seconds: each link is up or dropped for the next TICK (packet loss), every drone
-  // broadcasts, and the transcript records who heard whom.
+  // Transcript sample every LOG_EVERY seconds (the messages themselves stream continuously).
   function commsTick(t) {
-    for (const l of links) { l.up = lossRng() >= loss; if (l.up) l.lastUp = t; }
     const x = hist[idxOf(t)], stamp = `<span class="t">${t.toFixed(1).padStart(5)} s</span>  `;
-    if (tau > 0) for (const l of links) if (l.up) {
-      pulses.push({ from: l.i, to: l.j, t0: t }); pulses.push({ from: l.j, to: l.i, t0: t });
-    }
     for (const i of liveIdx()) {
       const heard = nbrs[i].filter((j) => links[linkAt[i][j]].up), lost = nbrs[i].filter((j) => !links[linkAt[i][j]].up);
-      let line = `${stamp}<span class="who">${i} ${type[i]}</span> broadcasts x = ${x[i].toFixed(3)}`;
-      line += heard.length ? ` → heard by ${heard.join(", ")}` : " → heard by no one";
-      if (lost.length) line += ` <span class="lost">· dropped to ${lost.join(", ")}</span>`;
+      let line = `${stamp}<span class="who">${i} ${type[i]}</span> streams x = ${x[i].toFixed(3)}`;
+      line += heard.length ? ` → reaching ${heard.join(", ")}` : " → reaching no one";
+      if (lost.length) line += ` <span class="lost">· link down to ${lost.join(", ")}</span>`;
       tx.push({ about: [i, ...nbrs[i]], html: line });
       if (i === sel && nbrs[i].length) {
-        const uses = nbrs[i].map((j) => { const l = links[linkAt[i][j]], age = l.up ? Math.min(tau, t) : t - l.tSent; return `${j} (age ${age.toFixed(1)} s, ã ${(l.a * ageFactor(age)).toFixed(2)})`; });
+        const uses = nbrs[i].map((j) => { const l = links[linkAt[i][j]], age = t - l.tSent; return `${j} (τ_ij ${age.toFixed(1)} s, ã ${(l.a * ageFactor(age)).toFixed(2)})`; });
         tx.push({ about: [i], html: `${stamp}<span class="who">${i}</span> uses ${uses.join(", ")}` });
       }
     }
     if (tx.length > 800) tx = tx.slice(-500);
-    nextTick = t + TICK; txDirty = true;
+    nextTick = t + LOG_EVERY; txDirty = true;
   }
 
   // Failure and takeover. The takeover picks the backup closest to the failed drone (simplified:
@@ -590,11 +644,12 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     if (failed && !promoted && ui.takeover.checked && t >= tFail + TAKEOVER_DELAY - 1e-9) {
       promoted = true;
       const cands = [...Array(N).keys()].filter((i) => role[i] === "backup" && ok(i));
-      if (role[failDrone] === "active" && cands.length) {
+      const task = role[failDrone];
+      if (task !== "backup" && cands.length) {
         const b = cands.reduce((best, i) => (dist(i, failDrone) < dist(best, failDrone) ? i : best));
-        role[b] = "active";
-        addEvent(t, "takeover", `backup ${b} (${type[b]}) joins Task 1`, `${b} in`);
-      } else if (role[failDrone] === "active") addEvent(t, "none", "no backup available", "no backup");
+        role[b] = task;
+        addEvent(t, "takeover", `backup ${b} (${type[b]}) joins ${taskName[task]}`, `${b} in`);
+      } else if (task !== "backup") addEvent(t, "none", "no backup available", "no backup");
       placeFleet();
     }
     if (failed && isNaN(ref.e)) ref = { t, e: disagreement(x) };
@@ -612,12 +667,15 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     C = {
       panel: g("--panel"), ink: g("--ink"), ink2: g("--ink-2"), ink3: g("--ink-3"), rule: g("--rule"), grid: g("--grid"),
       good: g("--good"), bad: g("--bad"), taskBg: g("--task-bg"), taskEdge: g("--task-edge"),
+      task2Bg: g("--task2-bg"), task2Edge: g("--task2-edge"), backupFill: g("--backup-fill"), backupText: g("--backup-text"),
       type: { camera: g("--cam"), thermal: g("--thr"), lidar: g("--lid") },
       pos: g("--pos"), neg: g("--neg"), mono: g("--f-mono"), body: g("--f-body"),
     };
     matDirty = true;
   }
   const typeText = { camera: "#ffffff", thermal: "#1a0d05", lidar: "#04150e" };
+  const taskName = { task1: "Task 1", task2: "Task 2", backup: "backup" };
+  const senderColor = (i) => (ok(i) && role[i] === "backup" ? C.backupFill : C.type[type[i]]);
   const typeVar = { camera: "--cam", thermal: "--thr", lidar: "--lid" };
 
   // ================================================================ canvas helpers
@@ -642,46 +700,49 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   function drawGraph() {
     const { ctx, w, h } = fit(gcv);
     ctx.clearRect(0, 0, w, h);
-    const pad = 22, s = (Math.min(w, h) - 2 * pad) / AREA;
-    const X = (p) => pad + p[0] * s, Y = (p) => h - pad - p[1] * s;
+    // view is zoomed out a little: [-VIEW_PAD, AREA + VIEW_PAD] so circles near the edge stay visible
+    const span = AREA + 2 * VIEW_PAD, s = Math.min(w, h) / span;
+    const X = (p) => (p[0] + VIEW_PAD) * s, Y = (p) => h - (p[1] + VIEW_PAD) * s;
     gGeom = { X, Y };
     const t = k * dt, x = hist[k];
-    const R0 = Math.max(10, Math.min(15, 1.4 * s * 10));
+    const R0 = Math.max(9, Math.min(14, 1.3 * s * 10));
     const Rof = (i) => R0 * Math.pow(gamma[i], 0.4);   // size grows with information weight
 
+    // operating area and 20 m grid
     ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
     for (let g = 0; g <= AREA; g += 20) {
-      ctx.beginPath(); ctx.moveTo(pad + g * s, pad); ctx.lineTo(pad + g * s, h - pad); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(pad, h - pad - g * s); ctx.lineTo(w - pad, h - pad - g * s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X([g, 0]), Y([0, 0])); ctx.lineTo(X([g, 0]), Y([0, AREA])); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X([0, g]), Y([0, g])); ctx.lineTo(X([AREA, 0]), Y([0, g])); ctx.stroke();
     }
+    ctx.strokeStyle = C.rule; ctx.strokeRect(X([0, 0]), Y([0, AREA]), AREA * s, AREA * s);
     ctx.fillStyle = C.ink3; ctx.font = `10px ${C.mono}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
-    ctx.fillText("100 m × 100 m", pad + 2, h - pad + 6);
+    ctx.fillText("operating area 100 m × 100 m", X([0, 0]) + 2, Y([0, 0]) + 4);
 
-    // Task 1 region: discs around active drones joined along their links (never encloses a backup)
-    const team = [...Array(N).keys()].filter((i) => ok(i) && role[i] === "active");
-    if (team.length) {
+    // task regions: discs around each member joined along their links (never encloses another drone)
+    for (const [task, bg, edge, name] of [["task1", C.taskBg, C.taskEdge, "Task 1"], ["task2", C.task2Bg, C.task2Edge, "Task 2"]]) {
+      const team = [...Array(N).keys()].filter((i) => ok(i) && role[i] === task);
+      if (!team.length) continue;
       const band = (wd, col, mode) => {
         ctx.save(); ctx.globalCompositeOperation = mode; ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineCap = "round"; ctx.lineWidth = wd;
         for (const i of team) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), wd / 2, 0, 2 * Math.PI); ctx.fill(); }
-        for (const i of team) for (const j of nbrs[i]) if (j > i && role[j] === "active") { ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.stroke(); }
-        // fill triangles of three mutually linked active drones so the region has no holes
+        for (const i of team) for (const j of nbrs[i]) if (j > i && role[j] === task) { ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.stroke(); }
         for (const i of team) for (const j of team) for (const q of team) if (i < j && j < q && linkAt[i][j] >= 0 && linkAt[j][q] >= 0 && linkAt[i][q] >= 0) {
           ctx.beginPath(); ctx.moveTo(X(pos[i]), Y(pos[i])); ctx.lineTo(X(pos[j]), Y(pos[j])); ctx.lineTo(X(pos[q]), Y(pos[q])); ctx.closePath(); ctx.fill();
         }
         ctx.restore();
       };
-      band(2 * (R0 + 12), C.taskBg, "source-over");
-      band(2 * (R0 + 12) + 3, C.taskEdge, "destination-over");
+      band(2 * (R0 + 11), bg, "source-over");
+      band(2 * (R0 + 11) + 3, edge, "destination-over");
       const top = team.reduce((a, i) => (Y(pos[i]) < Y(pos[a]) ? i : a));
       ctx.font = `600 11.5px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      halo(ctx, `Task 1 · ${team.length} drone${team.length === 1 ? "" : "s"}`, X(pos[top]), Math.max(12, Y(pos[top]) - R0 - 14), C.ink);
+      halo(ctx, `${name} · ${team.length} drone${team.length === 1 ? "" : "s"}`, X(pos[top]), Math.max(12, Y(pos[top]) - R0 - 13), C.ink);
     }
 
     // comms radius circles
     const focus = hoverNode >= 0 ? hoverNode : sel;
     ctx.save(); ctx.setLineDash([4, 4]);
     if (ui.disks.checked) {
-      ctx.strokeStyle = C.ink3; ctx.globalAlpha = 0.25; ctx.lineWidth = 1;
+      ctx.strokeStyle = C.ink3; ctx.globalAlpha = 0.22; ctx.lineWidth = 1;
       for (let i = 0; i < N; i++) if (i !== focus && ok(i)) { ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), rc * s, 0, 2 * Math.PI); ctx.stroke(); }
     }
     ctx.globalAlpha = 1; ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.3;
@@ -690,59 +751,74 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     halo(ctx, `r_c = ${rc} m`, X(pos[focus]), Math.max(12, Y(pos[focus]) - rc * s - 3), C.ink2);
     ctx.restore();
 
-    // links used in the last JOINT_WIN seconds (the union graph), then the links right now
+    // links used in the last JOINT_WIN seconds (the union graph)
     if (ui.union.checked) {
-      ctx.save(); ctx.strokeStyle = C.good; ctx.globalAlpha = 0.3; ctx.lineCap = "round"; ctx.lineWidth = 9;
+      ctx.save(); ctx.strokeStyle = C.good; ctx.globalAlpha = 0.28; ctx.lineCap = "round"; ctx.lineWidth = 12;
       for (const l of links) if (l.lastUp >= t - JOINT_WIN) { ctx.beginPath(); ctx.moveTo(X(pos[l.i]), Y(pos[l.i])); ctx.lineTo(X(pos[l.j]), Y(pos[l.j])); ctx.stroke(); }
       ctx.restore();
     }
+
+    // balanced digraph: every link is two directed lanes (i -> j and j -> i) with equal weight.
+    // Each lane sits on its own right-hand side; dots stream along it continuously.
+    const lane = (from, to) => {
+      const ax = X(pos[from]), ay = Y(pos[from]), bx = X(pos[to]), by = Y(pos[to]);
+      const L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L;
+      const off = 3.2, nx = -uy * off, ny = ux * off;
+      const r1 = Rof(from) + 3, r2 = Rof(to) + 5;
+      return { x1: ax + ux * r1 + nx, y1: ay + uy * r1 + ny, x2: bx - ux * r2 + nx, y2: by - uy * r2 + ny, ux, uy };
+    };
+    const travel = tau > 0 ? tau : VISUAL_TRAVEL, nDots = 3;
     for (const l of links) {
       const hl = focus === l.i || focus === l.j;
-      ctx.save(); ctx.lineCap = "round";
-      if (l.up) { ctx.strokeStyle = hl ? C.ink2 : C.ink3; ctx.globalAlpha = hl ? 0.95 : 0.55; ctx.lineWidth = 0.6 + 4.2 * effWeight(l, t); }
-      else { ctx.strokeStyle = C.bad; ctx.globalAlpha = 0.6; ctx.lineWidth = 1.4; ctx.setLineDash([2, 4]); }
-      ctx.beginPath(); ctx.moveTo(X(pos[l.i]), Y(pos[l.i])); ctx.lineTo(X(pos[l.j]), Y(pos[l.j])); ctx.stroke();
-      ctx.restore();
+      for (const [from, to] of [[l.i, l.j], [l.j, l.i]]) {
+        const p = lane(from, to);
+        ctx.save(); ctx.lineCap = "round";
+        if (l.up) { ctx.strokeStyle = hl ? C.ink2 : C.ink3; ctx.globalAlpha = hl ? 0.95 : 0.6; ctx.lineWidth = 0.6 + 2.6 * effWeight(l, t); }
+        else { ctx.strokeStyle = C.bad; ctx.globalAlpha = 0.65; ctx.lineWidth = 1.2; ctx.setLineDash([2, 4]); }
+        ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
+        // arrowhead at the receiving end
+        ctx.setLineDash([]); ctx.fillStyle = ctx.strokeStyle; ctx.beginPath();
+        ctx.moveTo(p.x2, p.y2); ctx.lineTo(p.x2 - p.ux * 6 - p.uy * 3, p.y2 - p.uy * 6 + p.ux * 3); ctx.lineTo(p.x2 - p.ux * 6 + p.uy * 3, p.y2 - p.uy * 6 - p.ux * 3); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        if (!l.up || reduceMotion) continue;
+        // information stream: dots leave the sender continuously and arrive after `travel` seconds
+        for (let m = 0; m < nDots; m++) {
+          const f = (((t / travel) - m / nDots) % 1 + 1) % 1;
+          ctx.beginPath(); ctx.arc(p.x1 + (p.x2 - p.x1) * f, p.y1 + (p.y2 - p.y1) * f, 2.6, 0, 2 * Math.PI);
+          ctx.fillStyle = senderColor(from); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.panel; ctx.stroke();
+        }
+      }
     }
 
-    // messages in flight
-    pulses = pulses.filter((p) => t - p.t0 < tau && ok(p.from) && ok(p.to));
-    for (const p of pulses) {
-      const f = (t - p.t0) / tau; if (f < 0 || f > 1) continue;
-      const a = pos[p.from], b = pos[p.to];
-      ctx.beginPath(); ctx.arc(X(a) + (X(b) - X(a)) * f, Y(a) + (Y(b) - Y(a)) * f, 3, 0, 2 * Math.PI);
-      ctx.fillStyle = C.type[type[p.from]]; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.panel; ctx.stroke();
-    }
-
-    // d_min keep-out circles (red when another drone is inside)
+    // safety circles of radius d_min / 2: two circles may never overlap (distance >= d_min)
     if (dmin > 0) for (let i = 0; i < N; i++) {
       if (health[i] === "malfunction") continue;
-      const tooClose = [...Array(N).keys()].some((j) => j !== i && health[j] !== "malfunction" && dist(i, j) < dmin);
-      ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), Math.max(dmin * s, Rof(i) + 2), 0, 2 * Math.PI);
-      ctx.lineWidth = tooClose ? 2 : 1.1; ctx.strokeStyle = tooClose ? C.bad : C.ink3; ctx.globalAlpha = tooClose ? 1 : 0.7; ctx.stroke(); ctx.globalAlpha = 1;
+      const overlap = [...Array(N).keys()].some((j) => j !== i && health[j] !== "malfunction" && dist(i, j) < dmin);
+      ctx.beginPath(); ctx.arc(X(pos[i]), Y(pos[i]), Math.max((dmin / 2) * s, Rof(i) + 1.5), 0, 2 * Math.PI);
+      ctx.lineWidth = overlap ? 2 : 1.1; ctx.strokeStyle = overlap ? C.bad : C.ink3; ctx.globalAlpha = overlap ? 1 : 0.75; ctx.stroke(); ctx.globalAlpha = 1;
     }
 
-    // drones: fill = sensor type; rings and marks = role / health
+    // drones: fill = sensor type (grey for backups, with a sensor-colour ring); marks = health
     for (let i = 0; i < N; i++) {
       const R = Rof(i), cx = X(pos[i]), cy = Y(pos[i]), down = health[i] === "malfunction";
+      const backup = ok(i) && role[i] === "backup";
       ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
-      ctx.globalAlpha = down ? 0.4 : 1; ctx.fillStyle = C.type[type[i]]; ctx.fill(); ctx.globalAlpha = 1;
-      ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
-      if (ok(i) && role[i] === "backup") { ctx.save(); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = C.ink2; ctx.stroke(); ctx.restore(); }
+      ctx.globalAlpha = down ? 0.4 : 1; ctx.fillStyle = backup ? C.backupFill : C.type[type[i]]; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.lineWidth = backup ? 3 : 2; ctx.strokeStyle = backup ? C.type[type[i]] : C.panel; ctx.stroke();
       if (health[i] === "commslost") { ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, 2 * Math.PI); ctx.lineWidth = 2.2; ctx.strokeStyle = C.bad; ctx.stroke(); }
-      if (i === sel) { ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke(); }
-      ctx.fillStyle = typeText[type[i]]; ctx.font = `600 12px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (i === sel) { ctx.beginPath(); ctx.arc(cx, cy, R + 7, 0, 2 * Math.PI); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke(); }
+      ctx.fillStyle = backup ? C.backupText : typeText[type[i]]; ctx.font = `600 11.5px ${C.body}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(String(i), cx, cy + 0.5);
       if (down) {
         const q = R * 0.95; ctx.strokeStyle = C.bad; ctx.lineWidth = 3; ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(cx - q, cy - q); ctx.lineTo(cx + q, cy + q); ctx.moveTo(cx + q, cy - q); ctx.lineTo(cx - q, cy + q); ctx.stroke();
       }
     }
-    ctx.font = `500 11px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.font = `500 10.5px ${C.mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
     for (let i = 0; i < N; i++) {
       const v = x[i];
       const txt = health[i] === "malfunction" ? "offline" : health[i] === "commslost" ? `${fmt(v, 2)} no link` : Math.abs(v) < 1000 ? v.toFixed(2) : v.toExponential(1);
-      halo(ctx, txt, X(pos[i]), Y(pos[i]) + Math.max(Rof(i) + 4, dmin * s * 0.7), health[i] === "ok" ? C.ink : C.bad);
+      halo(ctx, txt, X(pos[i]), Y(pos[i]) + Math.max(Rof(i) + 3, (dmin / 2) * s + 1), health[i] === "ok" ? C.ink : C.bad);
     }
   }
 
@@ -840,17 +916,18 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     placeFleet();
   }
   function placeFleet() {
-    const boxes = { task: $("dots-task"), backup: $("dots-backup"), out: $("dots-out") };
+    const boxes = { task: $("dots-task"), task2: $("dots-task2"), backup: $("dots-backup"), out: $("dots-out") };
     Object.values(boxes).forEach((el) => (el.innerHTML = ""));
-    const count = { task: 0, backup: 0, out: 0 };
+    const count = { task: 0, task2: 0, backup: 0, out: 0 };
     for (let i = 0; i < N; i++) {
-      const where = !ok(i) ? "out" : role[i] === "active" ? "task" : "backup"; count[where]++;
+      const where = !ok(i) ? "out" : role[i] === "task1" ? "task" : role[i] === "task2" ? "task2" : "backup"; count[where]++;
       const st = !ok(i) ? health[i] : role[i];
       dotEls[i].b.className = `dot ${type[i]} ${st}${i === sel ? " sel" : ""}`;
-      dotEls[i].b.setAttribute("aria-label", `Drone ${i}, ${type[i]}, ${st === "active" ? "on Task 1" : st === "backup" ? "backup" : st === "malfunction" ? "out: malfunction" : "out: comms lost"}`);
+      dotEls[i].b.style.setProperty("--ring", `var(${typeVar[type[i]]})`);
+      dotEls[i].b.setAttribute("aria-label", `Drone ${i}, ${type[i]}, ${st === "malfunction" ? "out: malfunction" : st === "commslost" ? "out: comms lost" : taskName[st]}`);
       boxes[where].appendChild(dotEls[i].slot);
     }
-    for (const key of ["task", "backup", "out"]) {
+    for (const key of ["task", "task2", "backup", "out"]) {
       $(`c-${key}`).textContent = `${count[key]}`;
       if (!count[key]) boxes[key].innerHTML = `<span class="empty">${key === "backup" ? "none" : key === "out" ? "all healthy" : "no drones"}</span>`;
     }
@@ -934,9 +1011,19 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     const cp = closestPair();
     $("r-close").textContent = isFinite(cp.d) ? `${cp.d.toFixed(1)} m${cp.d < dmin ? " (too close)" : ""}` : "–";
     $("r-close").className = cp.d < dmin ? "no" : "";
+    // balanced digraph check: incoming weight (column sum) = outgoing weight (row sum) for every drone
+    const W = Array.from({ length: N }, () => new Array(N).fill(0));   // directed weights, W[i][j] = ã on lane j -> i
+    for (const l of links) if (l.up) { const a = effWeight(l, t); W[l.i][l.j] = a; W[l.j][l.i] = a; }
+    let bal = true;
+    for (let i = 0; i < N; i++) {
+      const rowSum = W[i].reduce((u, v) => u + v, 0), colSum = W.reduce((u, r) => u + r[i], 0);
+      if (Math.abs(rowSum - colSum) > 1e-12) bal = false;
+    }
+    yn($("r-bal"), bal);
+    $("r-cap").textContent = `${Math.max(0, ...deg)} of K = ${cap}`;
     $("tau-hint").textContent = spec ? `stable if τ < τ_max = π/(2μₙ) = ${spec.tauMax.toFixed(2)} s` : "τ_max: – (network split)";
     $("dt-hint").textContent = spec ? `stable if dt < 2/μₙ = ${(2 / spec.muN).toFixed(2)} s` : "–";
-    $("fail-hint").textContent = failMode === "none" ? "no failure in this run" : `drone ${failDrone} (${role0[failDrone]}, ${type[failDrone]}) will fail`;
+    $("fail-hint").textContent = failMode === "none" ? "no failure in this run" : `drone ${failDrone} (${taskName[role0[failDrone]]}, ${type[failDrone]}) will fail`;
     const st = $("status"), set = (c, s) => { st.className = `pill ${c}`; st.textContent = s; };
     if (!connected) set("warn", failed ? "Network split by the failure" : "Disconnected: groups agree separately");
     else if (spec && dt >= 2 / spec.muN && !(tau >= spec.tauMax)) set("bad", "Unstable: dt too big for Euler");
@@ -975,7 +1062,8 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     $("dt-out").textContent = `${dt < 0.01 ? dt.toFixed(4) : dt.toFixed(3)} s`; $("speed-out").textContent = `${SPEEDS[speedIdx]}×`;
     $("tfail-out").textContent = `${tFail} s`;
     $("mode-hint").textContent = { none: "all drones stay healthy", malfunction: "drone drops out of the network", commslost: "drone keeps flying but hears no one" }[failMode];
-    $("sel-name").textContent = `Drone ${sel} · ${type[sel]} · ${role0[sel] === "backup" ? "backup" : "Task 1"}`;
+    $("sel-name").textContent = `Drone ${sel} · ${type[sel]} · ${taskName[(role.length ? role : role0)[sel]]}`;
+    $("cap-out").textContent = cap;
     $("sel-sw").style.background = `var(${typeVar[type[sel]]})`;
     $("gam-out").textContent = gamma[sel].toFixed(1); ui.gam.value = gamma[sel];
   }
@@ -983,7 +1071,8 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
   const onInput = (el, fn, restartAfter = true) => el.addEventListener("input", () => { fn(); syncLabels(); if (restartAfter) restart(); });
   onInput(ui.n, () => { N = +ui.n.value; newLayout(); });
   onInput(ui.ntypes, () => { nTypes = +ui.ntypes.value; for (let i = 0; i < N; i++) type[i] = TYPES[i % nTypes]; });
-  onInput(ui.dmin, () => { dmin = +ui.dmin.value; }, false);
+  onInput(ui.dmin, () => { dmin = +ui.dmin.value; separate(); });
+  onInput(ui.cap, () => { cap = +ui.cap.value; });
   onInput(ui.rc, () => { rc = +ui.rc.value; });
   onInput(ui.sigma, () => { sigma = +ui.sigma.value; });
   onInput(ui.tau, () => { tau = +ui.tau.value; });
@@ -1013,7 +1102,7 @@ table.m tr.sel td { box-shadow: inset 0 0 0 1.5px var(--ink); }
     hoverNode = nodeAt(ev); hoverSeries = hoverNode;
     if (hoverNode < 0) { gtip.hidden = true; return; }
     const i = hoverNode, card = gcv.parentElement.getBoundingClientRect();
-    const stName = !ok(i) ? (health[i] === "malfunction" ? "out: malfunction" : "out: comms lost") : role[i] === "active" ? "Task 1" : "backup";
+    const stName = !ok(i) ? (health[i] === "malfunction" ? "out: malfunction" : "out: comms lost") : taskName[role[i]];
     gtip.textContent = `Drone ${i} · ${type[i]} · ${stName}\nx = ${fmt(hist[k][i])}, x(0) = ${fmt(x0[i])}\n|N| = ${deg[i]}, γ = ${gamma[i]}, w = γ|N| = ${(gamma[i] * deg[i]).toFixed(1)}`;
     gtip.hidden = false;
     gtip.style.left = `${Math.max(4, Math.min(ev.clientX - card.left + 14, card.width - 230))}px`; gtip.style.top = `${ev.clientY - card.top + 10}px`;
