@@ -1,11 +1,14 @@
-"""Figures for step 1. Each function saves a PNG into cfg.out_dir and returns the figure."""
+"""Figures (optional dependency: pip install -e ".[viz]"). Each plot saves a PNG to cfg.out_dir."""
+
+from __future__ import annotations
+
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
-from swarm_sim.graph import Graph
+from swarm.sim import ConsensusResult, measured_rate
 
 # Fixed categorical order (one colour per drone id, never cycled) and a one-hue sequential ramp.
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
@@ -28,10 +31,12 @@ def _save(fig, cfg, name):
     return fig
 
 
-def plot_graph(g: Graph, x0: np.ndarray, cfg, disk_drone: int = 0):
-    """Plot 1: comms graph. Edge width ~ a_ij, node colour = x_i(0), dashed r_c disk around one drone."""
+def plot_graph(res: ConsensusResult, disk_drone: int = 0):
+    """Plot 1: comms graph. Edge width ~ a_ij, node colour = x_i(0), dashed r_c disk around one
+    drone."""
+    g, x0, gamma, cfg = res.graph, res.x0, res.gamma, res.cfg
     fig, ax = plt.subplots(figsize=(6.4, 6.0))
-    a_max = g.A.max()
+    a_max = max(a for _, _, a in g.edges)
     for i, j, a in g.edges:
         if i < j:   # each undirected link is stored twice; draw once
             ax.plot(*g.pos[[i, j]].T, color=INK_2, lw=0.5 + 4.0 * a / a_max, alpha=0.55,
@@ -62,22 +67,24 @@ def plot_graph(g: Graph, x0: np.ndarray, cfg, disk_drone: int = 0):
     for i, p in enumerate(g.pos):
         ax.annotate(f"{i}", p, ha="center", va="center", fontsize=9, fontweight="bold",
                     color="white" if x0[i] > 0.5 * (cfg.x0_low + cfg.x0_high) else INK, zorder=3)
-        ax.annotate(f"{i}: |N|={int(g.n_nbrs[i])}, γ={g.gamma[i]:g}", p, xytext=lab[i],
+        ax.annotate(f"{i}: |N|={int(g.n_nbrs[i])}, γ={gamma[i]:g}", p, xytext=lab[i],
                     textcoords="data", ha="center", va="center", fontsize=8, color=INK_2, zorder=4,
                     bbox=dict(boxstyle="round,pad=0.2", fc="white", ec=GRID, lw=0.6),
                     arrowprops=dict(arrowstyle="-", color=INK_2, lw=0.6, shrinkA=0, shrinkB=9))
     fig.colorbar(sc, ax=ax, shrink=0.8, label="initial value $x_i(0)$")
-    lo = min(-5.0, *(c - cfg.r_c - 5), *(lab.min(axis=0) - 0.6 * box))   # keep r_c disk and labels in view
+    # keep the r_c disk and all labels in view
+    lo = min(-5.0, *(c - cfg.r_c - 5), *(lab.min(axis=0) - 0.6 * box))
     hi = max(cfg.area + 5.0, *(c + cfg.r_c + 5), *(lab.max(axis=0) + 0.6 * box))
     ax.add_patch(plt.Rectangle((0, 0), cfg.area, cfg.area, fill=False, lw=0.8, ec=GRID, zorder=0))
     ax.set(xlim=(lo, hi), ylim=(lo, hi), aspect="equal",
            xlabel="x [m]", ylabel="y [m]",
            title=f"Comms graph (N={len(x0)}, edge width $\\propto a_{{ij}}$)")
-    return _save(fig, cfg, "1_graph.png")
+    return _save(fig, cfg, "consensus_graph.png")
 
 
-def plot_states(t, X, alpha, cfg, tau):
+def plot_states(res: ConsensusResult):
     """Plot 2: x_i(t) for every drone, dashed line at the predicted consensus value alpha."""
+    t, X, alpha, cfg, tau = res.t, res.X, res.alpha, res.cfg, res.cfg.tau
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
     for i in range(X.shape[1]):
         ax.plot(t, X[:, i], color=SERIES[i % len(SERIES)], label=f"drone {i}")
@@ -86,11 +93,13 @@ def plot_states(t, X, alpha, cfg, tau):
                 textcoords="offset points", ha="right", va="bottom", color=INK)
     ax.set(xlabel="time t [s]", ylabel="$x_i(t)$", title=f"Consensus on a scalar (τ = {tau:g} s)")
     ax.legend(ncol=4, fontsize=8, frameon=False, loc="upper right", bbox_to_anchor=(1, 0.93))
-    return _save(fig, cfg, "2_states.png")
+    return _save(fig, cfg, "consensus_states.png")
 
 
-def plot_disagreement(t, e, mu_2, rate_meas, cfg):
+def plot_disagreement(res: ConsensusResult):
     """Plot 3: ||x(t) - alpha 1|| on log scale, with a reference line of slope exp(-mu_2 t)."""
+    t, e, mu_2, cfg = res.t, res.e, res.spec["mu_2"], res.cfg
+    rate_meas = measured_rate(t, e)
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
     ax.semilogy(t, e, color=SERIES[0], label="simulated $\\|x(t) - \\alpha\\mathbf{1}\\|$")
     # Anchor the reference at mid-run so it overlays the asymptotic slope (not the transient).
@@ -101,13 +110,17 @@ def plot_disagreement(t, e, mu_2, rate_meas, cfg):
            title=f"Disagreement decay (measured rate {rate_meas:.4f} 1/s)")
     ax.set_ylim(max(e[e > 0].min() * 0.3, 1e-16), e.max() * 3)
     ax.legend(frameon=False)
-    return _save(fig, cfg, "3_disagreement.png")
+    return _save(fig, cfg, "consensus_disagreement.png")
 
 
-def plot_delay_comparison(runs, tau_max, cfg):
-    """Plot 4: disagreement for several delays. runs = [(label, t, e), ...]."""
+def plot_delay_comparison(res: ConsensusResult):
+    """Plot 4: disagreement for each delay in cfg.delay_sweep (multiples of tau_max)."""
+    tau_max, cfg = res.spec["tau_max"], res.cfg
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
-    for idx, (label, t, e) in enumerate(runs):
+    for idx, run in enumerate(res.sweep):
+        t, e = run.t, run.e
+        name = "τ = 0" if run.factor == 0 else f"τ = {run.factor:g} τ_max"
+        label = f"{name} ({run.tau:.3f} s)"
         ax.semilogy(t, e, color=SERIES[idx], label=label)
         last = np.nonzero(np.isfinite(e))[0][-1]
         ax.annotate(label.split(" (")[0], (t[last], e[last]), xytext=(4, 0),
@@ -115,4 +128,14 @@ def plot_delay_comparison(runs, tau_max, cfg):
     ax.set(xlabel="time t [s]", ylabel="$\\|x(t) - \\alpha\\mathbf{1}\\|$",
            title=f"Delay stability bound: τ_max = π / (2 μ_n) = {tau_max:.3f} s")
     ax.legend(frameon=False, loc="lower left")
-    return _save(fig, cfg, "4_delay_comparison.png")
+    return _save(fig, cfg, "consensus_delay.png")
+
+
+def plot_all(res: ConsensusResult, show: bool = True) -> None:
+    """Save all four step-1 figures to cfg.out_dir and optionally open them."""
+    plot_graph(res)
+    plot_states(res)
+    plot_disagreement(res)
+    plot_delay_comparison(res)
+    if show:
+        plt.show()

@@ -1,0 +1,6 @@
+# Same as consensus_static.yaml, but drones 0 and 3 carry twice the information weight,
+# which pulls the consensus value alpha towards their initial estimates.
+scenario: consensus_static
+seed: 1
+gamma_overrides: {0: 2.0, 3: 2.0}
+out_dir: outputs/weighted

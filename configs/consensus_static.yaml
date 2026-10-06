@@ -1,0 +1,29 @@
+# Step 1: static drones agree on one scalar x with comms delay, information weights and
+# normalization by neighbour count. See docs/consensus_step1.md.
+scenario: consensus_static
+seed: 1
+
+# swarm / geometry
+n_drones: 8
+area: 100.0          # [m], drones uniform in [0, area]^2, redrawn until the graph is connected
+r_c: 40.0            # comms radius [m]
+sigma: 40.0          # a_ij = exp(-d_ij^2 / sigma^2) [m]
+
+# information weights: gamma_i = gamma_default unless overridden, e.g. {0: 2.0, 3: 2.0}
+gamma_default: 1.0
+gamma_overrides: {}
+
+# initial values x_i(0) ~ Uniform[x0_low, x0_high]
+x0_low: 0.0
+x0_high: 10.0
+
+# integration
+t_final: 60.0        # [s]
+dt: 0.01             # forward-Euler step [s], must be << 2 / mu_n
+tau: 0.0             # comms delay of the main run [s]
+tol_rel: 0.01        # converged when |x_i - alpha| < tol_rel * |alpha|
+
+# extra runs at these multiples of tau_max = pi / (2 mu_n)
+delay_sweep: [0.0, 0.5, 1.2]
+
+out_dir: outputs
